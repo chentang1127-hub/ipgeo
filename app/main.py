@@ -27,6 +27,7 @@ from . import auth
 from . import billing
 from .billing import PLAN_QUOTAS
 from . import ratelimit
+from . import webhooks
 
 logger = logging.getLogger(__name__)
 
@@ -293,6 +294,36 @@ async def metrics():
     """Prometheus metrics endpoint."""
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+# ---------------------------------------------------------------------------
+# Paddle webhook
+# ---------------------------------------------------------------------------
+
+
+@app.post("/v1/webhooks/paddle")
+async def paddle_webhook(request: Request):
+    """
+    Paddle billing webhook receiver.  Paddle POSTs events here for
+    subscription lifecycle: activation, cancellation, renewals, payments.
+
+    Verify the HMAC-SHA256 signature before processing.
+    """
+    from .config import get_settings
+
+    settings = get_settings()
+    raw_body = await request.body()
+    signature = request.headers.get("Paddle-Signature", "")
+
+    if not webhooks.verify_signature(raw_body, signature, settings.paddle_webhook_secret):
+        raise HTTPException(401, detail="Invalid webhook signature")
+
+    body = await request.json()
+    event_type = body.get("event_type", "")
+    event_data = body.get("data", {})
+
+    await webhooks.handle_event(event_type, event_data)
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------------------

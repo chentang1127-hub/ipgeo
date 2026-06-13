@@ -29,9 +29,24 @@ class Settings(BaseSettings):
     # Rate-limit window in seconds
     ratelimit_window: int = 60
 
+    # Paddle billing
+    paddle_api_key: str = ""
+    paddle_webhook_secret: str = ""
+    paddle_sandbox: bool = True  # True = Paddle sandbox, False = live
+
+    # Paddle price ID → IPGeo plan mapping
+    # Fill these from your Paddle sandbox dashboard after creating prices
+    paddle_price_plan_map: dict[str, str] = {}
+
     @property
     def is_production(self) -> bool:
         return self.environment == "production"
+
+    @property
+    def paddle_api_url(self) -> str:
+        if self.paddle_sandbox:
+            return "https://sandbox-api.paddle.com"
+        return "https://api.paddle.com"
 
 
 @lru_cache
