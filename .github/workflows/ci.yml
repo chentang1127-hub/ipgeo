@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+          pip install -r requirements.txt
+
+      - name: Download GeoLite2 databases
+        run: |
+          mkdir -p data
+          curl -sL -o data/GeoLite2-City.mmdb \
+            "https://raw.githubusercontent.com/P3TERX/GeoLite.mmdb/download/GeoLite2-City.mmdb"
+          curl -sL -o data/GeoLite2-ASN.mmdb \
+            "https://raw.githubusercontent.com/P3TERX/GeoLite.mmdb/download/GeoLite2-ASN.mmdb"
+          ls -lh data/
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short

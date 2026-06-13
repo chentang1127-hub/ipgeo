@@ -1,0 +1,399 @@
+"""Integration tests for all API endpoints.
+
+Run:  pytest tests/ -v
+"""
+
+import hmac
+import hashlib
+import json
+import time
+
+import pytest
+from httpx import AsyncClient, ASGITransport
+
+from app.main import app
+from app.config import get_settings
+
+
+# ---------------------------------------------------------------------------
+# Health check (no auth, no billing)
+# ---------------------------------------------------------------------------
+
+class TestHealth:
+    async def test_health_returns_ok(self, client: AsyncClient):
+        resp = await client.get("/v1/health")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "ok"
+        assert body["version"] == "0.1.0"
+        assert body["db_loaded"] is True
+
+    async def test_health_no_auth_required(self, client: AsyncClient):
+        """Health endpoint should work without any headers."""
+        resp = await client.get("/v1/health")
+        assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+
+class TestAuth:
+    async def test_missing_key_returns_401(self, client: AsyncClient):
+        resp = await client.get("/v1/ip/8.8.8.8")
+        assert resp.status_code == 401
+        assert resp.json()["error"] == "unauthorized"
+
+    async def test_invalid_key_returns_401(self, client: AsyncClient):
+        resp = await client.get(
+            "/v1/ip/8.8.8.8",
+            headers={"X-API-Key": "ipgeo_deadbeef00000000000000000000000000000000000000000000000000000000"},
+        )
+        assert resp.status_code == 401
+
+    async def test_query_param_auth(self, client: AsyncClient, api_key: str):
+        """Auth via ?api_key= query parameter."""
+        resp = await client.get(f"/v1/ip/1.1.1.1?api_key={api_key}")
+        assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Single IP lookup
+# ---------------------------------------------------------------------------
+
+class TestLookupIP:
+    async def test_valid_ipv4(self, client: AsyncClient, api_key: str):
+        resp = await client.get(
+            "/v1/ip/8.8.8.8",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ip"] == "8.8.8.8"
+        assert "country" in body
+        assert body["country"]["code"] == "US"
+
+    async def test_valid_ipv6(self, client: AsyncClient, api_key: str):
+        resp = await client.get(
+            "/v1/ip/2001:4860:4860::8888",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ip"] == "2001:4860:4860::8888"
+
+    async def test_invalid_ip_returns_400(self, client: AsyncClient, api_key: str):
+        resp = await client.get(
+            "/v1/ip/not-an-ip",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 400
+        assert "Invalid IP" in resp.json()["detail"]
+
+    async def test_private_ip(self, client: AsyncClient, api_key: str):
+        resp = await client.get(
+            "/v1/ip/192.168.1.1",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["country"]["code"] == "XX"
+
+    async def test_field_filtering(self, client: AsyncClient, api_key: str):
+        resp = await client.get(
+            "/v1/ip/8.8.8.8?fields=country,network",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "ip" in body          # ip is always included
+        assert "country" in body
+        assert "network" in body
+        assert "city" not in body    # not requested
+        assert "timezone" not in body
+
+    async def test_cf_connecting_ip_header(self, client: AsyncClient, api_key: str):
+        """When CF-Connecting-IP is set, /v1/ip/me should use it."""
+        resp = await client.get(
+            "/v1/ip/me",
+            headers={"X-API-Key": api_key, "CF-Connecting-IP": "1.2.3.4"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ip"] == "1.2.3.4"
+
+    async def test_x_real_ip_header(self, client: AsyncClient, api_key: str):
+        resp = await client.get(
+            "/v1/ip/me",
+            headers={"X-API-Key": api_key, "X-Real-IP": "5.6.7.8"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ip"] == "5.6.7.8"
+
+
+# ---------------------------------------------------------------------------
+# Batch lookup
+# ---------------------------------------------------------------------------
+
+class TestBatch:
+    async def test_batch_requires_json_body(self, client: AsyncClient, api_key: str):
+        resp = await client.post(
+            "/v1/ip/batch",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json={"ips": ["8.8.8.8", "1.1.1.1", "8.8.4.4"]},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "results" in body
+        assert len(body["results"]) == 3
+
+    async def test_batch_empty_ips(self, client: AsyncClient, api_key: str):
+        resp = await client.post(
+            "/v1/ip/batch",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json={"ips": []},
+        )
+        assert resp.status_code == 400
+
+    async def test_batch_invalid_ip(self, client: AsyncClient, api_key: str):
+        resp = await client.post(
+            "/v1/ip/batch",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json={"ips": ["8.8.8.8", "invalid"]},
+        )
+        assert resp.status_code == 400
+        assert "Invalid IP" in resp.json()["detail"]
+
+    async def test_batch_limit_100(self, client: AsyncClient, api_key: str):
+        ips = [f"1.1.1.{i}" for i in range(1, 102)]  # 101 IPs
+        resp = await client.post(
+            "/v1/ip/batch",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json={"ips": ips},
+        )
+        assert resp.status_code == 400
+        assert "100" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Usage endpoint
+# ---------------------------------------------------------------------------
+
+class TestUsage:
+    async def test_usage_returns_structure(self, client: AsyncClient, api_key: str):
+        resp = await client.get("/v1/usage", headers={"X-API-Key": api_key})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["plan"] == "free"
+        assert "monthly_quota" in body
+        assert "monthly_used" in body
+        assert "remaining_quota" in body
+        assert "prepaid_credits" in body
+
+    async def test_usage_requires_auth(self, client: AsyncClient):
+        resp = await client.get("/v1/usage")
+        assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Rate limiting
+# ---------------------------------------------------------------------------
+
+class TestRateLimit:
+    async def test_rate_limit_applied(self, client: AsyncClient, api_key: str):
+        """Free plan should get 429 after exceeding 30 req/min."""
+        # Fire 31 requests rapidly
+        statuses = []
+        for _ in range(31):
+            resp = await client.get(
+                "/v1/ip/8.8.8.8",
+                headers={"X-API-Key": api_key},
+            )
+            statuses.append(resp.status_code)
+
+        assert 200 in statuses  # some should succeed
+        assert 429 in statuses  # but eventually rate-limited
+
+
+# ---------------------------------------------------------------------------
+# Admin endpoints
+# ---------------------------------------------------------------------------
+
+class TestAdmin:
+    async def test_create_key_no_token(self, client: AsyncClient):
+        resp = await client.post("/v1/admin/keys")
+        assert resp.status_code == 403
+
+    async def test_create_key_bad_token(self, client: AsyncClient):
+        resp = await client.post(
+            "/v1/admin/keys",
+            headers={"X-Admin-Token": "wrong"},
+        )
+        assert resp.status_code == 403
+
+    async def test_create_and_revoke_key(self, client: AsyncClient):
+        key_data = None
+
+        # Create
+        resp = await client.post(
+            "/v1/admin/keys",
+            headers={
+                "X-Admin-Token": "test-admin-secret",
+                "Content-Type": "application/json",
+            },
+            json={"user_id": "integration-test", "plan": "starter"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["api_key"].startswith("ipgeo_")
+        assert body["plan"] == "starter"
+        key_data = body
+
+        # Verify the key works
+        resp = await client.get(
+            "/v1/ip/8.8.8.8",
+            headers={"X-API-Key": key_data["api_key"]},
+        )
+        assert resp.status_code == 200
+
+        # Revoke
+        resp = await client.request(
+            "DELETE",
+            "/v1/admin/keys",
+            headers={
+                "X-Admin-Token": "test-admin-secret",
+                "Content-Type": "application/json",
+            },
+            content=json.dumps({"api_key": key_data["api_key"]}),
+        )
+        assert resp.status_code == 200
+        assert resp.json()["revoked"] is True
+
+        # Key should no longer work
+        resp = await client.get(
+            "/v1/ip/8.8.8.8",
+            headers={"X-API-Key": key_data["api_key"]},
+        )
+        assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Paddle webhook
+# ---------------------------------------------------------------------------
+
+class TestPaddleWebhook:
+    def _sign(self, body: bytes, secret: str) -> str:
+        ts = str(int(time.time()))
+        payload = f"{ts}:{body.decode()}"
+        h1 = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        return f"ts={ts};h1={h1}"
+
+    async def test_webhook_missing_signature(self, client: AsyncClient):
+        resp = await client.post("/v1/webhooks/paddle")
+        assert resp.status_code == 401
+
+    async def test_webhook_bad_signature(self, client: AsyncClient):
+        body_dict = {"event_type": "test"}
+        body_bytes = json.dumps(body_dict).encode()
+        sig = self._sign(body_bytes, "wrong-secret")
+        resp = await client.post(
+            "/v1/webhooks/paddle",
+            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            content=body_bytes,
+        )
+        assert resp.status_code == 401
+
+    async def test_webhook_valid_signature(self, client: AsyncClient):
+        body_dict = {"event_type": "transaction.completed", "data": {"id": "txn_test"}}
+        body_bytes = json.dumps(body_dict).encode()
+        sig = self._sign(body_bytes, "test-paddle-secret")
+        resp = await client.post(
+            "/v1/webhooks/paddle",
+            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            content=body_bytes,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+    async def test_webhook_transaction_completed_sets_plan(self, client: AsyncClient):
+        """A transaction.completed with a mapped price should provision the user."""
+        settings = get_settings()
+        settings.paddle_price_plan_map = {"pri_test_123": "pro"}
+
+        body_dict = {
+            "event_type": "transaction.completed",
+            "data": {
+                "id": "txn_provision_test",
+                "custom_data": {"user_id": "test-user"},
+                "items": [{"price": {"id": "pri_test_123", "product_id": "pro_test"}}],
+                "subscription_id": "sub_test",
+                "customer_id": "ctm_test",
+            },
+        }
+        body_bytes = json.dumps(body_dict).encode()
+        sig = self._sign(body_bytes, "test-paddle-secret")
+        resp = await client.post(
+            "/v1/webhooks/paddle",
+            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            content=body_bytes,
+        )
+        assert resp.status_code == 200
+
+        # The user's plan should now be "pro"
+        from app.redis_client import get_redis
+        redis = get_redis()
+        plan = await redis.get("ipgeo:user:test-user:plan")
+        assert plan == "pro"
+
+    async def test_webhook_canceled_stores_effective_at(self, client: AsyncClient):
+        body_dict = {
+            "event_type": "subscription.canceled",
+            "data": {
+                "id": "sub_cancel_test",
+                "custom_data": {"user_id": "cancel-user"},
+                "status": "active",
+                "scheduled_change": {"action": "cancel", "effective_at": "2026-07-14T00:00:00Z"},
+            },
+        }
+        body_bytes = json.dumps(body_dict).encode()
+        sig = self._sign(body_bytes, "test-paddle-secret")
+        resp = await client.post(
+            "/v1/webhooks/paddle",
+            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            content=body_bytes,
+        )
+        assert resp.status_code == 200
+
+        from app.redis_client import get_redis
+        redis = get_redis()
+        effective_at = await redis.get("ipgeo:user:cancel-user:cancel_effective_at")
+        assert effective_at == "2026-07-14T00:00:00Z"
+
+
+# ---------------------------------------------------------------------------
+# Metrics endpoint
+# ---------------------------------------------------------------------------
+
+class TestMetrics:
+    async def test_metrics_returns_prometheus(self, client: AsyncClient):
+        resp = await client.get("/metrics")
+        assert resp.status_code == 200
+        assert "ipgeo_lookups_total" in resp.text
+
+
+# ---------------------------------------------------------------------------
+# CORS headers
+# ---------------------------------------------------------------------------
+
+class TestCORS:
+    async def test_cors_headers_present(self, client: AsyncClient):
+        resp = await client.options(
+            "/v1/health",
+            headers={
+                "Origin": "https://example.com",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp.status_code == 200
+        assert "access-control-allow-origin" in resp.headers
