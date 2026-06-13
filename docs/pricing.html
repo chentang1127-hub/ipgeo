@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — IPGeo</title>
+<style>
+:root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+nav .logo { font-size: 1.5rem; font-weight: 700; color: #fff; text-decoration: none; }
+nav .logo span { color: var(--accent); }
+h1 { color: #fff; margin-bottom: 8px; }
+.subtitle { color: var(--dim); margin-bottom: 40px; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px; }
+.plan { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; text-align: center; }
+.plan.featured { border-color: var(--accent); }
+.plan h3 { color: #fff; font-size: 1rem; }
+.plan .price { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 12px 0; }
+.plan .price small { font-size: .75rem; color: var(--dim); font-weight: 400; }
+.plan .qty { color: var(--dim); font-size: .8rem; margin-bottom: 12px; }
+.plan ul { list-style: none; text-align: left; font-size: .8rem; color: var(--dim); padding: 0; }
+.plan ul li { padding: 4px 0; }
+.note { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; color: var(--dim); font-size: .85rem; margin-bottom: 40px; }
+footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; }
+footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav><a href="/" class="logo">IP<span>Geo</span></a></nav>
+  <h1>Pricing</h1>
+  <p class="subtitle">Simple monthly plans. No hidden fees. Prepaid credits available for overage.</p>
+
+  <div class="plan-grid">
+    <div class="plan"><h3>Free</h3><div class="price">$0<small>/mo</small></div><div class="qty">1,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 30 req/min</li><li>✗ Batch endpoint</li></ul></div>
+    <div class="plan"><h3>Starter</h3><div class="price">$9<small>/mo</small></div><div class="qty">10,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 300 req/min</li><li>✓ Batch lookups</li></ul></div>
+    <div class="plan featured"><h3>Pro</h3><div class="price">$29<small>/mo</small></div><div class="qty">50,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 1,200 req/min</li><li>✓ Batch lookups</li></ul></div>
+    <div class="plan"><h3>Business</h3><div class="price">$79<small>/mo</small></div><div class="qty">250,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 6,000 req/min</li><li>✓ Batch lookups</li></ul></div>
+    <div class="plan"><h3>Enterprise</h3><div class="price">Custom</div><div class="qty">Unmetered</div><ul><li>✓ Everything</li><li>✓ Custom limits</li><li>✓ Priority support</li></ul></div>
+  </div>
+
+  <div class="note">All plans include the same data fields: country, city, coordinates, postal code, ISP, ASN, AS organization, timezone, and continent. Enterprise plans also include raw MaxMind data access.</div>
+</div>
+<footer><p>© 2026 IPGeo. <a href="/">Home</a> <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/refund">Refunds</a></p></footer>
+</body>
+</html>

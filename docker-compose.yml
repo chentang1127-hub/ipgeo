@@ -1,0 +1,35 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - redis_data:/data
+
+  ipgeo:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      IPGEO_HOST: "0.0.0.0"
+      IPGEO_PORT: "8000"
+      IPGEO_WORKERS: "4"
+      IPGEO_REDIS_URL: "redis://redis:6379/0"
+      IPGEO_CITY_DB_PATH: "/app/data/GeoLite2-City.mmdb"
+      IPGEO_ASN_DB_PATH: "/app/data/GeoLite2-ASN.mmdb"
+      IPGEO_MAXMIND_LICENSE_KEY: "${IPGEO_MAXMIND_LICENSE_KEY:-}"
+      IPGEO_ADMIN_TOKEN: "${IPGEO_ADMIN_TOKEN:-change-me}"
+    volumes:
+      - geo_data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+  geo_data:
