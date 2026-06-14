@@ -10,6 +10,7 @@ import hmac
 import json
 import logging
 from datetime import datetime, timezone
+from typing import Optional
 
 from .config import get_settings
 from .redis_client import get_redis
