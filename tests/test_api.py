@@ -202,10 +202,10 @@ class TestUsage:
 
 class TestRateLimit:
     async def test_rate_limit_applied(self, client: AsyncClient, api_key: str):
-        """Free plan should get 429 after exceeding 30 req/min."""
-        # Fire 31 requests rapidly
+        """Free plan should get 429 after exceeding 60 req/min."""
+        # Fire 65 requests rapidly to exceed the 60/min free limit
         statuses = []
-        for _ in range(31):
+        for _ in range(65):
             resp = await client.get(
                 "/v1/ip/8.8.8.8",
                 headers={"X-API-Key": api_key},

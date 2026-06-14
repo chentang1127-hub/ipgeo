@@ -93,12 +93,12 @@ class InMemoryStore:
         count = int(args[3])
 
         quotas = {
-            "free": 1_000,
-            "starter": 10_000,
-            "pro": 50_000,
-            "business": 250_000,
+            "free": 10_000,
+            "starter": 100_000,
+            "pro": 250_000,
+            "business": 1_000_000,
         }
-        quota = quotas.get(plan, 1_000)
+        quota = quotas.get(plan, 10_000)
 
         used = int(self._data.get(usage_key, 0))
         if used + count <= quota:
