@@ -117,13 +117,17 @@
     .section-head h2 { font-size: 2rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
     .section-head p { color: var(--dim); font-size: .95rem; margin-top: 8px; max-width: 500px; margin-left: auto; margin-right: auto; }
 
-    /* ── Features ── */
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 80px; }
-    .feature { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color .2s; }
-    .feature:hover { border-color: var(--dim2); }
-    .feature .icon { font-size: 1.4rem; margin-bottom: 10px; }
-    .feature h3 { color: #fff; font-size: .95rem; margin-bottom: 6px; }
-    .feature p { color: var(--dim); font-size: .82rem; }
+    /* ── Card grid (shared: Features & Use Cases) ── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 80px; }
+    .card-grid .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; transition: border-color .2s; }
+    .card-grid .card:hover { border-color: var(--dim2); }
+    .card-grid .icon-block {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 10px; margin-bottom: 16px;
+      background: rgba(124,58,237,0.1); font-size: 1.25rem;
+    }
+    .card-grid h3 { color: #fff; font-size: .92rem; margin-bottom: 6px; font-weight: 600; }
+    .card-grid p { color: var(--dim); font-size: .8rem; line-height: 1.55; }
 
     /* ── Demo ── */
     .demo-box {
@@ -166,12 +170,7 @@
     .endpoint code { color: var(--text); font-size: .85rem; flex: 1; }
     .endpoint .desc { color: var(--dim); font-size: .78rem; }
 
-    /* ── Use Cases ── */
-    .use-cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 80px; }
-    .use-case { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
-    .use-case .icon { font-size: 1.5rem; margin-bottom: 12px; }
-    .use-case h3 { color: #fff; font-size: .95rem; margin-bottom: 6px; }
-    .use-case p { color: var(--dim); font-size: .8rem; }
+    /* ── Use Cases uses .card-grid (shared with Features) ── */
 
     /* ── Trust ── */
     .trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 80px; }
@@ -307,34 +306,34 @@
     <h2>Built for Developers</h2>
     <p>Everything you need for IP geolocation, nothing you don't.</p>
   </div>
-  <div class="features">
-    <div class="feature">
-      <div class="icon">⚡</div>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon-block">⚡</div>
       <h3>Sub-millisecond Lookups</h3>
       <p>mmap-based zero-copy GeoIP engine. 20× faster than ip-api.com, 50× faster than ipstack.</p>
     </div>
-    <div class="feature">
-      <div class="icon">🌍</div>
+    <div class="card">
+      <div class="icon-block">🌍</div>
       <h3>20+ Data Fields</h3>
       <p>Country, city, coordinates, postal code, ISP, ASN, timezone, continent, and more.</p>
     </div>
-    <div class="feature">
-      <div class="icon">🔐</div>
+    <div class="card">
+      <div class="icon-block">🔐</div>
       <h3>Simple API Key Auth</h3>
       <p>One X-API-Key header. No OAuth dance, no JWT tokens, no ceremony.</p>
     </div>
-    <div class="feature">
-      <div class="icon">📦</div>
+    <div class="card">
+      <div class="icon-block">📦</div>
       <h3>Batch Lookups</h3>
       <p>Up to 100 IPs in a single POST request. Same per-IP pricing.</p>
     </div>
-    <div class="feature">
-      <div class="icon">🔄</div>
+    <div class="card">
+      <div class="icon-block">🔄</div>
       <h3>Weekly Auto-Refresh</h3>
       <p>Database updates automatically every week. Zero downtime, always fresh.</p>
     </div>
-    <div class="feature">
-      <div class="icon">💻</div>
+    <div class="card">
+      <div class="icon-block">💻</div>
       <h3>Zero-Dependency Dev Mode</h3>
       <p>Runs without Redis or Docker. One command local development.</p>
     </div>
@@ -345,24 +344,24 @@
     <div class="kicker">Use Cases</div>
     <h2>One API, Many Applications</h2>
   </div>
-  <div class="use-cases">
-    <div class="use-case">
-      <div class="icon">🎯</div>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon-block">🎯</div>
       <h3>Geo-Targeted Content</h3>
       <p>Show localized pricing, language, and content based on visitor location.</p>
     </div>
-    <div class="use-case">
-      <div class="icon">🛡️</div>
+    <div class="card">
+      <div class="icon-block">🛡️</div>
       <h3>Fraud Detection</h3>
       <p>Flag transactions from high-risk regions. Match IP country to billing address.</p>
     </div>
-    <div class="use-case">
-      <div class="icon">📊</div>
+    <div class="card">
+      <div class="icon-block">📊</div>
       <h3>Analytics & Segmentation</h3>
       <p>Enrich user profiles with geo data. Segment audiences by country or city.</p>
     </div>
-    <div class="use-case">
-      <div class="icon">🔒</div>
+    <div class="card">
+      <div class="icon-block">🔒</div>
       <h3>Access Control</h3>
       <p>Block or allow traffic by country. GDPR-compliant geo-fencing in minutes.</p>
     </div>
