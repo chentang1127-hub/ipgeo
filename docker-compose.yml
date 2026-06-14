@@ -13,8 +13,6 @@ services:
   ipgeo:
     build: .
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     environment:
       IPGEO_HOST: "0.0.0.0"
       IPGEO_PORT: "8000"
@@ -24,12 +22,25 @@ services:
       IPGEO_ASN_DB_PATH: "/app/data/GeoLite2-ASN.mmdb"
       IPGEO_MAXMIND_LICENSE_KEY: "${IPGEO_MAXMIND_LICENSE_KEY:-}"
       IPGEO_ADMIN_TOKEN: "${IPGEO_ADMIN_TOKEN:-change-me}"
+      IPGEO_PADDLE_SANDBOX: "${IPGEO_PADDLE_SANDBOX:-true}"
+      IPGEO_PADDLE_API_KEY: "${IPGEO_PADDLE_API_KEY:-}"
+      IPGEO_PADDLE_WEBHOOK_SECRET: "${IPGEO_PADDLE_WEBHOOK_SECRET:-}"
     volumes:
-      - geo_data:/app/data
+      - ./data:/app/data
     depends_on:
       redis:
         condition: service_healthy
 
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docs:/app/docs:ro
+    depends_on:
+      - ipgeo
+
 volumes:
   redis_data:
-  geo_data:
