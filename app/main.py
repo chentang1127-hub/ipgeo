@@ -129,7 +129,7 @@ async def lookup_my_ip(
         or request.client.host
     )
 
-    result = geo.lookup(client_ip)
+    result = geo.lookup(client_ip, plan)
     lookup_count.labels(endpoint="me", plan=plan, status="ok").inc()
     return result
 
@@ -169,7 +169,7 @@ async def lookup_ip(
         )
 
     # Lookup
-    result = geo.lookup(ip)
+    result = geo.lookup(ip, plan)
 
     # Field filtering
     if fields:
@@ -226,7 +226,7 @@ async def batch_lookup(
 
     # Parallel lookups via thread pool
     with ThreadPoolExecutor(max_workers=20) as pool:
-        results = list(pool.map(geo.lookup, ips))
+        results = list(pool.map(lambda ip: geo.lookup(ip, plan), ips))
 
     lookup_count.labels(endpoint="batch", plan=plan, status="ok").inc(count)
     return {"results": results}

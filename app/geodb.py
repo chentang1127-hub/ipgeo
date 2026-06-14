@@ -24,7 +24,16 @@ logger = logging.getLogger(__name__)
 
 
 class GeoReader:
-    """Thread-safe, hot-reloadable mmap-backed GeoIP reader."""
+    """Thread-safe, hot-reloadable mmap-backed GeoIP reader.
+
+    Supports two data tiers:
+      - GeoLite2 (free):  ~37% city fill — used for Free / Starter
+      - GeoIP2 (paid):    ~95% city fill — used for Pro / Business / Enterprise
+    GeoIP2 databases are optional; fall back to GeoLite2 when unavailable.
+    """
+
+    # Plans eligible for paid GeoIP2 data
+    GEOIP2_PLANS = {"pro", "business", "enterprise"}
 
     def __init__(self, city_db_path: str = "", asn_db_path: str = ""):
         settings = get_settings()
@@ -33,8 +42,15 @@ class GeoReader:
             Path(asn_db_path) if asn_db_path else Path(settings.asn_db_path)
         )
 
+        # Paid GeoIP2 (optional — loaded when files exist)
+        self._city2_path = self._resolve(settings.geoip2_city_db_path)
+        self._asn2_path = self._resolve(settings.geoip2_asn_db_path)
+
         self._city: Optional[maxminddb.Reader] = None
         self._asn: Optional[maxminddb.Reader] = None
+        self._city2: Optional[maxminddb.Reader] = None  # GeoIP2
+        self._asn2: Optional[maxminddb.Reader] = None   # GeoIP2
+        self._has_geoip2 = False
         self._lock = threading.RLock()
 
         # Simple FIFO cache for hot IPs
@@ -46,9 +62,18 @@ class GeoReader:
         # Track file mtimes for hot-reload detection
         self._city_mtime = 0.0
         self._asn_mtime = 0.0
+        self._city2_mtime = 0.0
+        self._asn2_mtime = 0.0
 
         self.load()
         self._start_watcher()
+
+    @staticmethod
+    def _resolve(path: str) -> Optional[Path]:
+        if not path:
+            return None
+        p = Path(path)
+        return p if p.exists() else None
 
     # ------------------------------------------------------------------
     # Load / Reload
@@ -87,13 +112,40 @@ class GeoReader:
             else:
                 logger.info("ASN DB not found at %s, skipping", self._asn_path)
 
+            # GeoIP2 (paid, optional)
+            self._has_geoip2 = False
+            if self._city2_path:
+                if self._city2:
+                    try:
+                        self._city2.close()
+                    except Exception:
+                        pass
+                self._city2 = maxminddb.open_database(
+                    str(self._city2_path), maxminddb.MODE_MMAP
+                )
+                self._city2_mtime = self._city2_path.stat().st_mtime
+                logger.info("GeoIP2 City DB loaded: %s", self._city2_path.name)
+                self._has_geoip2 = True
+
+            if self._asn2_path:
+                if self._asn2:
+                    try:
+                        self._asn2.close()
+                    except Exception:
+                        pass
+                self._asn2 = maxminddb.open_database(
+                    str(self._asn2_path), maxminddb.MODE_MMAP
+                )
+                self._asn2_mtime = self._asn2_path.stat().st_mtime
+                logger.info("GeoIP2 ASN DB loaded: %s", self._asn2_path.name)
+
             # Invalidate cache on reload
             self._cache.clear()
 
     def close(self) -> None:
         """Release mmap handles."""
         with self._lock:
-            for reader in (self._city, self._asn):
+            for reader in (self._city, self._asn, self._city2, self._asn2):
                 if reader:
                     try:
                         reader.close()
@@ -104,16 +156,23 @@ class GeoReader:
     # Lookup
     # ------------------------------------------------------------------
 
-    def lookup(self, ip: str) -> dict:
+    def lookup(self, ip: str, plan: str = "free") -> dict:
         """
         Look up geolocation for a single IP address.
+
+        Args:
+            ip: The IP address string to look up.
+            plan: User's subscription plan.  Pro / Business / Enterprise
+                  use paid GeoIP2 data (95%+ city fill) when available;
+                  falls back to GeoLite2 otherwise.
 
         Returns a dict with country, city, coordinates, ISP, ASN, timezone.
         Private/reserved addresses get a special marker.
         Invalid IP strings return an error field.
         """
         # 1. Cache check
-        cached = self._cache.get(ip)
+        cache_key = f"{plan}:{ip}"
+        cached = self._cache.get(cache_key)
         if cached:
             self._cache_hits += 1
             return cached
@@ -130,29 +189,32 @@ class GeoReader:
         # 3. Private / reserved
         if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved:
             result = self._build_private_result(ip_str)
-            self._cache_put(ip_str, result)
+            self._cache_put(cache_key, result)
             return result
 
-        # 4. City + ASN lookups (mmap reads are safe across threads;
-        #    the lock protects against reader swap during reload)
+        # 4. Choose data source based on plan
+        use_geoip2 = plan in self.GEOIP2_PLANS and self._has_geoip2
+
         city_data = {}
         with self._lock:
             try:
-                city_data = self._city.get(ip_str) or {}
+                reader = self._city2 if use_geoip2 else self._city
+                city_data = reader.get(ip_str) or {}
             except Exception:
                 pass
 
         asn_data = {}
-        if self._asn:
+        asn_reader = self._asn2 if use_geoip2 and self._asn2 else self._asn
+        if asn_reader:
             with self._lock:
                 try:
-                    asn_data = self._asn.get(ip_str) or {}
+                    asn_data = asn_reader.get(ip_str) or {}
                 except Exception:
                     pass
 
         # 5. Assemble response
         result = self._build_result(ip_str, city_data, asn_data)
-        self._cache_put(ip_str, result)
+        self._cache_put(cache_key, result)
         return result
 
     # ------------------------------------------------------------------
@@ -236,8 +298,13 @@ class GeoReader:
                 try:
                     city_mt = self._city_path.stat().st_mtime
                     asn_mt = self._asn_path.stat().st_mtime if self._asn_path.exists() else 0
+                    city2_mt = self._city2_path.stat().st_mtime if self._city2_path else 0
+                    asn2_mt = self._asn2_path.stat().st_mtime if self._asn2_path else 0
 
-                    if city_mt > self._city_mtime or (asn_mt and asn_mt > self._asn_mtime):
+                    if (city_mt > self._city_mtime or
+                        (asn_mt and asn_mt > self._asn_mtime) or
+                        (city2_mt and city2_mt > self._city2_mtime) or
+                        (asn2_mt and asn2_mt > self._asn2_mtime)):
                         logger.info("Database files changed, hot-reloading...")
                         self.load()
                 except Exception as exc:

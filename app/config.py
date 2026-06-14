@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     city_db_path: str = "data/GeoLite2-City.mmdb"
     asn_db_path: str = "data/GeoLite2-ASN.mmdb"
 
+    # Paid GeoIP2 databases (higher precision, 95%+ city fill vs ~37% GeoLite2)
+    # Used for Pro / Business / Enterprise plans when available.
+    geoip2_city_db_path: str = ""
+    geoip2_asn_db_path: str = ""
+
     admin_token: str = "change-me"
 
     # Rate-limit window in seconds
@@ -35,8 +40,12 @@ class Settings(BaseSettings):
     paddle_sandbox: bool = True  # True = Paddle sandbox, False = live
 
     # Paddle price ID → IPGeo plan mapping
-    # Fill these from your Paddle sandbox dashboard after creating prices
-    paddle_price_plan_map: dict[str, str] = {}
+    paddle_price_plan_map: dict[str, str] = {
+        "pri_01kv2fm7b7y2bwptwjeyq6gt36": "free",
+        "pri_01kv2fsash4j8ed9m2swmbst7z": "starter",
+        "pri_01kv2fyaj4ek50cxrbw7f332eh": "pro",
+        "pri_01kv2g0mdbeze07k2rqdcqykse": "business",
+    }
 
     @property
     def is_production(self) -> bool:

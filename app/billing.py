@@ -13,11 +13,13 @@ from .redis_client import get_redis
 logger = logging.getLogger(__name__)
 
 # Plan quotas (lookups per month)
+# Aligned with competitive analysis: ip-api.com Pro €13.30/mo unlimited.
+# IPGeo differentiates on data quality (Pro+ uses paid GeoIP2, 95%+ city fill).
 PLAN_QUOTAS = {
-    "free": 1_000,
-    "starter": 10_000,
-    "pro": 50_000,
-    "business": 250_000,
+    "free": 10_000,
+    "starter": 100_000,
+    "pro": 250_000,
+    "business": 1_000_000,
     "enterprise": 0,  # unmetered
 }
 
@@ -45,12 +47,12 @@ async def deduct(user_id: str, plan: str, count: int = 1) -> bool:
     local credits_key = KEYS[2]
 
     local quotas = {
-        free      = 1000,
-        starter   = 10000,
-        pro       = 50000,
-        business  = 250000
+        free      = 10000,
+        starter   = 100000,
+        pro       = 250000,
+        business  = 1000000
     }
-    local quota = quotas[plan] or 1000
+    local quota = quotas[plan] or 10000
 
     local used = tonumber(redis.call('GET', usage) or '0')
 

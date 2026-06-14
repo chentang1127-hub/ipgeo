@@ -1,11 +1,11 @@
 """
 Sliding-window rate limiting.  Per-user, backed by Redis sorted sets.
 
-Plan limits (requests per minute):
-    free      30/min
-    starter   300/min
-    pro       1200/min
-    business  6000/min
+Plan limits (requests per minute) — aligned with competitive analysis:
+    free      60/min
+    starter   600/min
+    pro       3_000/min
+    business  10_000/min
     enterprise  unmetered
 """
 
@@ -14,10 +14,10 @@ import time
 from .redis_client import get_redis
 
 PLAN_LIMITS = {
-    "free": 30,
-    "starter": 300,
-    "pro": 1_200,
-    "business": 6_000,
+    "free": 60,
+    "starter": 600,
+    "pro": 3_000,
+    "business": 10_000,
     "enterprise": 0,  # unmetered
 }
 

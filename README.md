@@ -32,12 +32,14 @@ curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8
 
 ## Pricing
 
-| Plan | Monthly | Lookups/mo | Rate Limit |
-|------|---------|-----------|------------|
-| **Free** | $0 | 1,000 | 30/min |
-| **Starter** | $19 | 10,000 | 300/min |
-| **Pro** | $49 | 50,000 | 1,200/min |
-| **Business** | $199 | 250,000 | 6,000/min |
+| Plan | Monthly | Lookups/mo | Rate Limit | Data |
+|------|---------|-----------|------------|------|
+| **Free** | $0 | 10,000 | 60/min | GeoLite2 |
+| **Starter** | $9 | 100,000 | 600/min | GeoLite2 |
+| **Pro** 🎯 | $29 | 250,000 | 3,000/min | **GeoIP2** |
+| **Business** | $79 | 1,000,000 | 10,000/min | **GeoIP2** |
+
+Pro & Business use MaxMind GeoIP2 (paid) for 95%+ city fill rate vs ~37% with GeoLite2.
 
 See [getipgeo.com/pricing](https://getipgeo.com) for details.
 

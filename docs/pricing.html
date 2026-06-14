@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pricing — IPGeo</title>
 <style>
-:root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; }
+:root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
 .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
@@ -12,17 +12,25 @@ nav { display: flex; justify-content: space-between; align-items: center; paddin
 nav .logo { font-size: 1.5rem; font-weight: 700; color: #fff; text-decoration: none; }
 nav .logo span { color: var(--accent); }
 h1 { color: #fff; margin-bottom: 8px; }
+h2 { color: #fff; font-size: 1.1rem; margin: 32px 0 16px; }
 .subtitle { color: var(--dim); margin-bottom: 40px; }
 .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px; }
-.plan { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; text-align: center; }
+.plan { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; text-align: center; position: relative; }
 .plan.featured { border-color: var(--accent); }
 .plan h3 { color: #fff; font-size: 1rem; }
 .plan .price { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 12px 0; }
 .plan .price small { font-size: .75rem; color: var(--dim); font-weight: 400; }
 .plan .qty { color: var(--dim); font-size: .8rem; margin-bottom: 12px; }
+.plan .badge { display: inline-block; font-size: .65rem; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
+.plan .badge.geoip2 { background: #064e3b; color: var(--green); }
 .plan ul { list-style: none; text-align: left; font-size: .8rem; color: var(--dim); padding: 0; }
 .plan ul li { padding: 4px 0; }
-.note { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; color: var(--dim); font-size: .85rem; margin-bottom: 40px; }
+.note { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; color: var(--dim); font-size: .85rem; margin-bottom: 24px; }
+.note strong { color: var(--text); }
+.data-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: .85rem; }
+.data-table th { text-align: left; padding: 8px 12px; background: var(--card); color: var(--text); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--dim); }
+.data-table tr td:first-child { color: var(--text); }
 footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; }
 footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
 footer a:hover { color: var(--text); }
@@ -32,17 +40,61 @@ footer a:hover { color: var(--text); }
 <div class="container">
   <nav><a href="/" class="logo">IP<span>Geo</span></a></nav>
   <h1>Pricing</h1>
-  <p class="subtitle">Simple monthly plans. No hidden fees. Prepaid credits available for overage.</p>
+  <p class="subtitle">Simple monthly plans. 7-day money-back guarantee on all paid plans.</p>
 
   <div class="plan-grid">
-    <div class="plan"><h3>Free</h3><div class="price">$0<small>/mo</small></div><div class="qty">1,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 30 req/min</li><li>✗ Batch endpoint</li></ul></div>
-    <div class="plan"><h3>Starter</h3><div class="price">$9<small>/mo</small></div><div class="qty">10,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 300 req/min</li><li>✓ Batch lookups</li></ul></div>
-    <div class="plan featured"><h3>Pro</h3><div class="price">$29<small>/mo</small></div><div class="qty">50,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 1,200 req/min</li><li>✓ Batch lookups</li></ul></div>
-    <div class="plan"><h3>Business</h3><div class="price">$79<small>/mo</small></div><div class="qty">250,000 queries/mo</div><ul><li>✓ All endpoints</li><li>✓ 6,000 req/min</li><li>✓ Batch lookups</li></ul></div>
-    <div class="plan"><h3>Enterprise</h3><div class="price">Custom</div><div class="qty">Unmetered</div><ul><li>✓ Everything</li><li>✓ Custom limits</li><li>✓ Priority support</li></ul></div>
+    <div class="plan">
+      <h3>Free</h3>
+      <div class="price">$0<small>/mo</small></div>
+      <div class="qty">10,000 queries/mo</div>
+      <ul><li>✓ All endpoints</li><li>✓ 60 req/min</li><li>✓ Batch lookups</li><li>✓ HTTPS + commercial use</li></ul>
+    </div>
+    <div class="plan">
+      <h3>Starter</h3>
+      <div class="price">$9<small>/mo</small></div>
+      <div class="qty">100,000 queries/mo</div>
+      <ul><li>✓ All endpoints</li><li>✓ 600 req/min</li><li>✓ Batch lookups</li><li>✓ Commercial use</li></ul>
+    </div>
+    <div class="plan featured">
+      <h3>Pro 🎯</h3>
+      <div class="price">$29<small>/mo</small></div>
+      <div class="qty">250,000 queries/mo</div>
+      <div class="badge geoip2">Premium GeoIP2 Data</div>
+      <ul><li>✓ All endpoints</li><li>✓ 3,000 req/min</li><li>✓ Batch lookups</li><li>✓ 95%+ city accuracy</li><li>✓ Postal code & subdivisions</li></ul>
+    </div>
+    <div class="plan">
+      <h3>Business</h3>
+      <div class="price">$79<small>/mo</small></div>
+      <div class="qty">1,000,000 queries/mo</div>
+      <div class="badge geoip2">Premium GeoIP2 Data</div>
+      <ul><li>✓ All endpoints</li><li>✓ 10,000 req/min</li><li>✓ Batch lookups</li><li>✓ 95%+ city accuracy</li><li>✓ Priority support</li></ul>
+    </div>
+    <div class="plan">
+      <h3>Enterprise</h3>
+      <div class="price">Custom</div>
+      <div class="qty">Unmetered</div>
+      <div class="badge geoip2">Premium GeoIP2 Data</div>
+      <ul><li>✓ Everything</li><li>✓ Custom limits</li><li>✓ SLA guarantee</li><li>✓ Dedicated support</li></ul>
+    </div>
   </div>
 
-  <div class="note">All plans include the same data fields: country, city, coordinates, postal code, ISP, ASN, AS organization, timezone, and continent. Enterprise plans also include raw MaxMind data access.</div>
+  <h2>Data Quality: Why Upgrade to Pro?</h2>
+  <table class="data-table">
+    <tr><th></th><th>GeoLite2 (Free / Starter)</th><th>GeoIP2 (Pro / Business / Enterprise)</th></tr>
+    <tr><td>City accuracy</td><td>~37% fill rate</td><td>~95% fill rate</td></tr>
+    <tr><td>Postal code</td><td>Limited</td><td>Full coverage</td></tr>
+    <tr><td>Subdivisions</td><td>Partial</td><td>Complete</td></tr>
+    <tr><td>Update frequency</td><td>Weekly</td><td>Daily (when available)</td></tr>
+    <tr><td>Data source</td><td>MaxMind GeoLite2 (CC BY-SA 4.0)</td><td>MaxMind GeoIP2 (commercial license)</td></tr>
+  </table>
+
+  <div class="note">
+    <strong>Why isn't our Free plan bigger?</strong> ip-api.com offers 45K free queries but with no HTTPS, no commercial use, and no SLA. Our Free plan at 10K queries gives you production-grade HTTPS, commercial use permitted, and a clean upgrade path to premium data when you need precision.
+  </div>
+
+  <div class="note">
+    <strong>Overage?</strong> If you exceed your monthly quota, API calls return 429 until the next billing cycle. Prepaid overage credits coming soon.
+  </div>
 </div>
 <footer><p>© 2026 IPGeo. <a href="/">Home</a> <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/refund">Refunds</a></p></footer>
 </body>
