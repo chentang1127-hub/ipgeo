@@ -57,6 +57,11 @@ class InMemoryStore:
     async def incr(self, key: str) -> int:
         return await self.incrby(key, 1)
 
+    async def keys(self, pattern: str = "*") -> list:
+        """Minimal glob: only supports * at start/end of prefix/suffix."""
+        import fnmatch
+        return [k for k in self._data if fnmatch.fnmatch(k, pattern)]
+
     async def decrby(self, key: str, amount: int) -> int:
         return await self.incrby(key, -amount)
 
