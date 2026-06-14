@@ -207,7 +207,7 @@ async def create_checkout(
     customer_email: str,
 ) -> dict:
     """
-    Call the Paddle API to create a checkout and return the checkout URL.
+    Call the Paddle API to create a checkout and return the checkout data.
 
     This is the server-side flow: you create a checkout via Paddle's API,
     then redirect the user to the returned URL.  When the transaction is
@@ -224,6 +224,9 @@ async def create_checkout(
         "items": [{"price_id": price_id, "quantity": 1}],
         "custom_data": {"user_id": user_id},
         "customer": {"email": customer_email},
+        "settings": {
+            "success_url": f"https://getipgeo.com/success?checkout_id={{checkout_id}}",
+        },
     }
 
     headers = {
@@ -240,3 +243,93 @@ async def create_checkout(
             raise RuntimeError(f"Paddle checkout failed: {result}")
 
         return result["data"]
+
+
+async def verify_checkout(checkout_id: str) -> Optional[dict]:
+    """
+    Query Paddle API for a checkout's status.
+
+    Used after checkout redirect to verify the user completed payment
+    before issuing an API key.
+
+    Returns None if not found/error, otherwise:
+        {
+            "status": "completed" | "draft" | "expired",
+            "user_id": "...",        # from custom_data
+            "email": "...",          # customer email
+            "price_id": "...",       # plan identifier
+        }
+    """
+    import httpx
+
+    settings = get_settings()
+
+    # First try the checkout endpoint
+    check_url = f"{settings.paddle_api_url}/checkouts/{checkout_id}"
+    headers = {
+        "Authorization": f"Bearer {settings.paddle_api_key}",
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient() as client:
+        # Get checkout
+        resp = await client.get(check_url, headers=headers)
+        if resp.status_code != 200:
+            logger.warning("Paddle checkout lookup failed: %s %s", resp.status_code, resp.text[:200])
+            # Try transaction lookup as fallback (Paddle redirect uses transaction ID sometimes)
+            txn_resp = await client.get(
+                f"{settings.paddle_api_url}/transactions/{checkout_id}",
+                headers=headers,
+            )
+            if txn_resp.status_code != 200:
+                return None
+            txn_data = txn_resp.json().get("data", {})
+            return _parse_transaction(txn_data)
+
+        data = resp.json().get("data", {})
+
+    # Extract info from checkout response
+    custom = data.get("custom_data") or {}
+    customer = data.get("customer") or {}
+    items = data.get("items") or []
+    price_id = ""
+    if items:
+        price_id = (items[0].get("price") or {}).get("id", "")
+
+    # Check if there's a completed transaction
+    transaction_id = data.get("transaction_id", "")
+    status = data.get("status", "")
+
+    if status != "completed" and transaction_id:
+        # Verify via transaction endpoint
+        async with httpx.AsyncClient() as client:
+            txn_resp = await client.get(
+                f"{settings.paddle_api_url}/transactions/{transaction_id}",
+                headers=headers,
+            )
+            if txn_resp.status_code == 200:
+                txn_data = txn_resp.json().get("data", {})
+                return _parse_transaction(txn_data)
+
+    return {
+        "status": status,
+        "user_id": custom.get("user_id", ""),
+        "email": customer.get("email", ""),
+        "price_id": price_id,
+    }
+
+
+def _parse_transaction(txn: dict) -> dict:
+    """Extract user-facing fields from a Paddle transaction object."""
+    custom = txn.get("custom_data") or {}
+    customer = txn.get("customer") or {}
+    items = txn.get("items") or []
+    price_id = ""
+    if items:
+        price_id = (items[0].get("price") or {}).get("id", "")
+    return {
+        "status": txn.get("status", ""),
+        "user_id": custom.get("user_id", ""),
+        "email": customer.get("email", ""),
+        "price_id": price_id,
+    }

@@ -110,6 +110,62 @@ async def revoke(api_key: str) -> bool:
     return bool(deleted)
 
 
+# ---------------------------------------------------------------------------
+# User registration helpers
+# ---------------------------------------------------------------------------
+
+
+async def get_user_by_email(email: str) -> Optional[str]:
+    """Look up user_id by email. Returns None if not found."""
+    redis = get_redis()
+    email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()
+    return await redis.get(f"ipgeo:email:{email_hash}")
+
+
+async def store_user_email(user_id: str, email: str) -> None:
+    """Store email → user_id mapping (bidirectional)."""
+    redis = get_redis()
+    email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()
+    await redis.set(f"ipgeo:email:{email_hash}", user_id)
+    await redis.set(f"ipgeo:user:{user_id}:email", email.lower().strip())
+
+
+async def store_pending_key(user_id: str, api_key: str, ttl: int = 86400 * 7) -> str:
+    """
+    Store a freshly-generated API key for later claim.
+    Returns a claim_token the user can use to retrieve it.
+    The key is stored for `ttl` seconds (default 7 days).
+    """
+    redis = get_redis()
+    claim_token = secrets.token_hex(32)
+    await redis.setex(
+        f"ipgeo:pending_key:{claim_token}",
+        ttl,
+        f"{user_id}|{api_key}",
+    )
+    return claim_token
+
+
+async def claim_key(claim_token: str) -> Optional[dict]:
+    """
+    Claim a pending API key. Returns {user_id, api_key, plan} or None.
+    The key is deleted after successful claim (one-time use).
+    """
+    redis = get_redis()
+    key = f"ipgeo:pending_key:{claim_token}"
+    raw = await redis.get(key)
+    if not raw:
+        return None
+
+    user_id, api_key = raw.split("|", 1)
+    plan = await redis.get(f"ipgeo:user:{user_id}:plan") or "free"
+
+    # One-time claim — delete after retrieval
+    await redis.delete(key)
+
+    return {"user_id": user_id, "api_key": api_key, "plan": plan}
+
+
 def _evict_stale() -> None:
     """Remove cache entries older than _cache_ttl."""
     now = time.time()

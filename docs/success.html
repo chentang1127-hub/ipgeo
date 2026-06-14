@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're All Set — IPGeo</title>
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; --red: #ef4444; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { max-width: 600px; width: 100%; padding: 0 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 40px 32px; text-align: center; }
+    .check { width: 64px; height: 64px; background: #064e3b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 2rem; }
+    h1 { color: #fff; font-size: 1.5rem; margin-bottom: 8px; }
+    .subtitle { color: var(--dim); font-size: .9rem; margin-bottom: 32px; }
+    .key-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; position: relative; }
+    .key-box code { font-size: .85rem; color: var(--green); word-break: break-all; user-select: all; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .key-box .label { font-size: .7rem; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+    .copy-btn { margin-top: 12px; padding: 8px 16px; background: var(--border); color: var(--text); border: none; border-radius: 6px; cursor: pointer; font-size: .8rem; transition: background .2s; }
+    .copy-btn:hover { background: #3a3a4a; }
+    .copy-btn.copied { background: #064e3b; color: var(--green); }
+    .try-box { background: #0d0d14; border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: left; margin-bottom: 24px; }
+    .try-box pre { color: var(--dim); font-size: .8rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+    .plan-badge { display: inline-block; background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 4px; font-size: .8rem; font-weight: 600; margin-bottom: 16px; }
+    .links { display: flex; gap: 12px; justify-content: center; }
+    .links a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    .links a:hover { color: var(--text); }
+    .spinner { display: none; width: 40px; height: 40px; border: 3px solid rgba(255,255,255,.1); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; margin: 0 auto 24px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error { background: #3b0a0a; border: 1px solid var(--red); border-radius: 6px; padding: 12px; color: #fca5a5; font-size: .85rem; margin-bottom: 16px; display: none; }
+    .step { color: var(--dim); font-size: .8rem; margin-top: 24px; }
+    .step span { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+    <div class="spinner" id="spinner"></div>
+    <div class="check" id="check" style="display:none;">✅</div>
+    <h1 id="title">Verifying Payment…</h1>
+    <p class="subtitle" id="status">Please wait while we confirm your checkout.</p>
+
+    <div class="error" id="error"></div>
+
+    <div id="result" style="display:none;">
+      <div class="plan-badge" id="planBadge">Pro</div>
+      <div class="key-box">
+        <div class="label">Your API Key</div>
+        <code id="apiKey">ipgeo_••••••••••••••••••••••••</code>
+        <br>
+        <button class="copy-btn" id="copyBtn" onclick="copyKey()">📋 Copy to clipboard</button>
+      </div>
+      <p style="color:var(--dim);font-size:.75rem;margin-bottom:24px;">
+        🔒 This is the only time your key is shown. Copy it now.<br>
+        If you lose it, you can claim it again with the same email.
+      </p>
+
+      <div class="try-box">
+        <div style="font-size:.8rem;color:var(--dim);margin-bottom:8px;">Try it out:</div>
+        <pre><code id="curlExample">curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/me</code></pre>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="/docs" target="_blank">API Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/">Home</a>
+    </div>
+
+    <p class="step" id="stepHint" style="display:none;">
+      <span id="stepText">Step 1/2: Payment confirmed. Creating your API key…</span>
+    </p>
+  </div>
+</div>
+
+<script>
+async function main() {
+  const params = new URLSearchParams(window.location.search);
+  const checkoutId = params.get('checkout_id');
+  const keyReady = params.get('key_ready');
+
+  // Free plan flow — key is in sessionStorage
+  if (keyReady === '1') {
+    const apiKey = sessionStorage.getItem('ipgeo_api_key');
+    const plan = sessionStorage.getItem('ipgeo_plan') || 'free';
+    if (apiKey) {
+      showResult(apiKey, plan);
+      sessionStorage.removeItem('ipgeo_api_key');
+      sessionStorage.removeItem('ipgeo_plan');
+      return;
+    }
+  }
+
+  if (!checkoutId) {
+    // No checkout_id — show email claim fallback
+    showEmailFallback();
+    return;
+  }
+
+  // Poll the claim endpoint (payment may take a moment to process)
+  let attempts = 0;
+  const maxAttempts = 30;
+  const pollInterval = 2000; // 2 seconds
+
+  while (attempts < maxAttempts) {
+    try {
+      const resp = await fetch('https://api.getipgeo.com/v1/auth/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkout_id: checkoutId }),
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        showResult(data.api_key, data.plan);
+        return;
+      }
+
+      if (resp.status === 425) {
+        // Payment still processing — retry
+        document.getElementById('stepHint').style.display = 'block';
+        document.getElementById('stepText').textContent =
+          `Waiting for payment confirmation… (attempt ${attempts + 1}/${maxAttempts})`;
+        attempts++;
+        await new Promise(r => setTimeout(r, pollInterval));
+        continue;
+      }
+
+      // Other error
+      const err = await resp.json();
+      throw new Error(err.detail || 'Failed to claim API key');
+    } catch (e) {
+      if (e.message && !e.message.includes('Failed to fetch')) {
+        showError(e.message);
+        return;
+      }
+      // Network error — retry
+      attempts++;
+      await new Promise(r => setTimeout(r, pollInterval));
+    }
+  }
+
+  showError('Payment verification timed out. Your key may already be ready — check your email or contact support.');
+  showEmailFallback();
+}
+
+function showResult(apiKey, plan) {
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('check').style.display = 'flex';
+  document.getElementById('title').textContent = "You're All Set!";
+  document.getElementById('status').textContent = 'Your API key is ready.';
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('apiKey').textContent = apiKey;
+  document.getElementById('planBadge').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+  document.getElementById('curlExample').textContent =
+    `curl -H "X-API-Key: ${apiKey}" https://api.getipgeo.com/v1/ip/me`;
+  document.getElementById('stepHint').style.display = 'none';
+}
+
+function showEmailFallback() {
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('title').textContent = 'Claim Your Key';
+  document.getElementById('status').innerHTML = `
+    <form id="claimForm" onsubmit="claimByEmail(event)" style="margin-top:16px;">
+      <input type="email" id="emailInput" placeholder="you@example.com" required
+        style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.95rem;margin-bottom:12px;">
+      <button type="submit"
+        style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.9rem;">
+        Look Up My Key
+      </button>
+    </form>
+  `;
+}
+
+async function claimByEmail(e) {
+  e.preventDefault();
+  const email = document.getElementById('emailInput').value.trim();
+  if (!email) return;
+
+  document.getElementById('error').style.display = 'none';
+  document.getElementById('spinner').style.display = 'block';
+
+  try {
+    // Re-register with the same email to get a checkout URL
+    // (or use a dedicated email-claim endpoint)
+    const resp = await fetch('https://api.getipgeo.com/v1/auth/claim-by-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      showResult(data.api_key, data.plan);
+      return;
+    }
+    const err = await resp.json();
+    showError(err.detail || 'No API key found for this email. Please complete your purchase first.');
+  } catch (ex) {
+    showError('Something went wrong. Please contact support.');
+  }
+}
+
+function showError(msg) {
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('error').textContent = msg;
+  document.getElementById('error').style.display = 'block';
+  document.getElementById('title').textContent = 'Almost There';
+  document.getElementById('status').textContent = 'Having trouble? Use the form below.';
+}
+
+function copyKey() {
+  const key = document.getElementById('apiKey').textContent;
+  navigator.clipboard.writeText(key).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✅ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy to clipboard';
+      btn.classList.remove('copied');
+    }, 3000);
+  });
+}
+
+main();
+</script>
+
+</body>
+</html>

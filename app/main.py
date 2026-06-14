@@ -11,6 +11,7 @@ Endpoints:
 
 import ipaddress
 import logging
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -22,7 +23,7 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 
 from .config import get_settings
 from .geodb import GeoReader
-from .redis_client import init_redis, close_redis
+from .redis_client import init_redis, close_redis, get_redis
 from . import auth
 from . import billing
 from .billing import PLAN_QUOTAS
@@ -253,6 +254,198 @@ async def health():
         "db_loaded": geo.loaded if geo else False,
         "cache": geo.stats if geo else {},
     }
+
+
+# ---------------------------------------------------------------------------
+# Auth / Registration endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.post("/v1/auth/register-free")
+async def auth_register_free(request: Request):
+    """
+    Register a free plan user directly (no Paddle checkout needed).
+
+    Request body:
+        { "email": "user@example.com" }
+
+    Response:
+        { "api_key": "ipgeo_...", "plan": "free", "user_id": "..." }
+    """
+    body = await request.json() or {}
+    email = (body.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(400, detail="Valid email is required")
+
+    # Check if user already exists
+    existing_user_id = await auth.get_user_by_email(email)
+    if existing_user_id:
+        api_key = await auth.create(existing_user_id, "free")
+        return {"api_key": api_key, "plan": "free", "user_id": existing_user_id}
+
+    # New user
+    user_id = uuid.uuid4().hex[:16]
+    await auth.store_user_email(user_id, email)
+    await billing.set_plan(user_id, "free")
+    api_key = await auth.create(user_id, "free")
+
+    logger.info("Free registration: user=%s email=%s", user_id, email)
+    return {"api_key": api_key, "plan": "free", "user_id": user_id}
+
+
+@app.post("/v1/auth/claim-by-email")
+async def auth_claim_by_email(request: Request):
+    """
+    Claim an API key by email. Fallback when the user loses their checkout_id.
+
+    Request body:
+        { "email": "user@example.com" }
+
+    Response:
+        { "api_key": "ipgeo_...", "plan": "pro", "user_id": "..." }
+    """
+    body = await request.json() or {}
+    email = (body.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(400, detail="Valid email is required")
+
+    user_id = await auth.get_user_by_email(email)
+    if not user_id:
+        raise HTTPException(404, detail="No account found for this email. Complete your purchase first.")
+
+    redis = get_redis()
+    plan = await redis.get(f"ipgeo:user:{user_id}:plan") or "free"
+    api_key = await auth.create(user_id, plan)
+
+    logger.info("Claim-by-email: user=%s plan=%s", user_id, plan)
+    return {"api_key": api_key, "plan": plan, "user_id": user_id}
+
+
+@app.post("/v1/auth/register")
+async def auth_register(request: Request):
+    """
+    Register a new user and get a Paddle checkout URL.
+
+    Request body:
+        { "email": "user@example.com", "price_id": "pri_01kv2fyaj4ek50cxrbw7f332eh" }
+
+    Response:
+        { "user_id": "...", "checkout_url": "https://buy.paddle.com/..." }
+
+    Redirect the user to `checkout_url`. After payment, Paddle will
+    redirect them to /success?checkout_id=xxx where they can claim their key.
+    """
+    body = await request.json() or {}
+
+    email = (body.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(400, detail="Valid email is required")
+
+    price_id = (body.get("price_id") or "").strip()
+    if not price_id:
+        raise HTTPException(400, detail="price_id is required (plan selection)")
+
+    # Validate price_id maps to a known plan
+    settings = get_settings()
+    plan = settings.paddle_price_plan_map.get(price_id)
+    if not plan:
+        raise HTTPException(400, detail=f"Unknown price_id: {price_id}")
+
+    # Check if user already exists by email
+    existing_user_id = await auth.get_user_by_email(email)
+    if existing_user_id:
+        # Existing user — create checkout with same user_id (plan upgrade)
+        user_id = existing_user_id
+    else:
+        # New user
+        user_id = uuid.uuid4().hex[:16]
+        await auth.store_user_email(user_id, email)
+
+    # Create Paddle checkout
+    checkout_data = await webhooks.create_checkout(
+        user_id=user_id,
+        price_id=price_id,
+        customer_email=email,
+    )
+
+    checkout_url = checkout_data.get("url") or checkout_data.get("checkout_url", "")
+    checkout_id = checkout_data.get("id", "")
+
+    logger.info("Registration: user=%s email=%s plan=%s checkout=%s", user_id, email, plan, checkout_id)
+
+    return {
+        "user_id": user_id,
+        "checkout_url": checkout_url,
+        "checkout_id": checkout_id,
+        "plan": plan,
+    }
+
+
+@app.post("/v1/auth/claim")
+async def auth_claim(request: Request):
+    """
+    Claim an API key after completing Paddle checkout.
+
+    Request body:
+        { "checkout_id": "..." }
+
+    Response:
+        { "api_key": "ipgeo_...", "plan": "pro", "user_id": "..." }
+
+    Idempotent: repeat calls with the same checkout_id return the SAME key.
+    """
+    body = await request.json() or {}
+    checkout_id = (body.get("checkout_id") or "").strip()
+
+    if not checkout_id:
+        raise HTTPException(400, detail="checkout_id is required")
+
+    settings = get_settings()
+    redis = get_redis()
+
+    # 0. Idempotency check — already claimed this checkout?
+    cached = await redis.get(f"ipgeo:claim:{checkout_id}")
+    if cached:
+        api_key, plan, user_id = cached.split("|", 2)
+        logger.info("Claim: checkout=%s already claimed, returning cached key", checkout_id)
+        return {"api_key": api_key, "plan": plan, "user_id": user_id}
+
+    # 1. Verify checkout with Paddle
+    checkout_info = await webhooks.verify_checkout(checkout_id)
+    if checkout_info is None:
+        raise HTTPException(400, detail="Checkout not found. It may take a moment — please retry.")
+
+    if checkout_info.get("status") != "completed":
+        raise HTTPException(
+            425,  # Too Early
+            detail=f"Payment not yet completed (status: {checkout_info['status']}). "
+                   "Please retry after the payment processes.",
+        )
+
+    user_id = checkout_info.get("user_id", "")
+    paddle_price_id = checkout_info.get("price_id", "")
+    plan = settings.paddle_price_plan_map.get(paddle_price_id, "free")
+
+    if not user_id:
+        raise HTTPException(400, detail="Could not identify user from checkout. Please contact support.")
+
+    # 2. Provision user
+    existing_plan = await redis.get(f"ipgeo:user:{user_id}:plan")
+    if existing_plan:
+        logger.info("Claim: user=%s already provisioned as %s", user_id, existing_plan)
+    else:
+        await billing.set_plan(user_id, plan)
+        # Also store email from checkout
+        email = checkout_info.get("email", "")
+        if email:
+            await auth.store_user_email(user_id, email)
+        logger.info("Claim: user=%s provisioned as plan=%s", user_id, plan)
+
+    # 3. Create API key + cache idempotently
+    api_key = await auth.create(user_id, plan)
+    await redis.setex(f"ipgeo:claim:{checkout_id}", 86400, f"{api_key}|{plan}|{user_id}")
+
+    return {"api_key": api_key, "plan": plan, "user_id": user_id}
 
 
 # ---------------------------------------------------------------------------
