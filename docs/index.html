@@ -191,16 +191,21 @@
     .proof-item .label { font-size: .75rem; color: var(--dim); }
 
     /* ── Pricing ── */
-    .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 80px; }
-    .plan { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 16px; text-align: center; transition: border-color .2s; }
+    .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 80px; align-items: stretch; }
+    .plan {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 24px 16px; text-align: center; transition: border-color .2s;
+      display: flex; flex-direction: column; align-items: center; min-height: 100%;
+    }
     .plan:hover { border-color: var(--dim2); }
     .plan.featured { border-color: var(--accent); background: var(--card2); }
     .plan h3 { color: #fff; font-size: .95rem; }
     .plan .price { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 12px 0 4px; }
     .plan .price small { font-size: .7rem; color: var(--dim); font-weight: 400; }
-    .plan .qty { color: var(--dim); font-size: .78rem; margin-bottom: 12px; }
-    .plan .plus { font-size: .68rem; color: var(--green); margin-top: 2px; }
-    .plan .btn-sm { display: block; margin-top: 14px; padding: 10px 0; border-radius: 6px; font-weight: 600; font-size: .82rem; text-decoration: none; text-align: center; }
+    .plan .qty { color: var(--dim); font-size: .78rem; }
+    .plan .plus { font-size: .68rem; color: var(--green); margin-top: 4px; min-height: 1.2em; }
+    .plan .plan-meta { flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .plan .btn-sm { display: block; margin-top: auto; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: .82rem; text-decoration: none; width: 100%; }
     .btn-sm-primary { background: var(--accent); color: #fff; }
     .btn-sm-primary:hover { background: var(--accent2); }
     .btn-sm-outline { border: 1px solid var(--border); color: var(--text); }
@@ -414,35 +419,47 @@
     <div class="plan">
       <h3>Free</h3>
       <div class="price">$0<small>/mo</small></div>
-      <div class="qty">10,000 queries</div>
+      <div class="plan-meta">
+        <div class="qty">10,000 queries</div>
+        <div class="plus">&nbsp;</div>
+      </div>
       <a href="/signup?plan=free" class="btn-sm btn-sm-primary">Get Started</a>
     </div>
     <div class="plan">
       <h3>Starter</h3>
       <div class="price">$9<small>/mo</small></div>
-      <div class="qty">100,000 queries</div>
+      <div class="plan-meta">
+        <div class="qty">100,000 queries</div>
+        <div class="plus">&nbsp;</div>
+      </div>
       <a href="/signup?plan=starter" class="btn-sm btn-sm-primary">Get Started</a>
     </div>
     <div class="plan featured">
       <h3>Pro 🎯</h3>
       <div class="price">$29<small>/mo</small></div>
-      <div class="qty">250,000 queries</div>
-      <div class="plus">+ Premium GeoIP2 data</div>
+      <div class="plan-meta">
+        <div class="qty">250,000 queries</div>
+        <div class="plus">+ Premium GeoIP2 data</div>
+      </div>
       <a href="/signup?plan=pro" class="btn-sm btn-sm-primary">Get Started</a>
     </div>
     <div class="plan">
       <h3>Business</h3>
       <div class="price">$79<small>/mo</small></div>
-      <div class="qty">1,000,000 queries</div>
-      <div class="plus">+ Premium GeoIP2 data</div>
+      <div class="plan-meta">
+        <div class="qty">1,000,000 queries</div>
+        <div class="plus">+ Premium GeoIP2 data</div>
+      </div>
       <a href="/signup?plan=business" class="btn-sm btn-sm-primary">Get Started</a>
     </div>
     <div class="plan">
       <h3>Enterprise</h3>
       <div class="price">Custom</div>
-      <div class="qty">Unmetered</div>
-      <div class="plus">+ Premium GeoIP2 data</div>
-      <a href="mailto:sales@getipgeo.com" class="btn-sm btn-sm-outline">Contact Sales</a>
+      <div class="plan-meta">
+        <div class="qty">Unmetered</div>
+        <div class="plus">+ Premium GeoIP2 data</div>
+      </div>
+      <a href="mailto:chentang1127@gmail.com" class="btn-sm btn-sm-outline">Contact Sales</a>
     </div>
   </div>
 
