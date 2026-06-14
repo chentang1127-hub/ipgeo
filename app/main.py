@@ -110,7 +110,7 @@ async def lookup_my_ip(
     Look up the calling client's IP address.  No IP parameter needed.
 
     ```
-    curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.ipgeo.io/v1/ip/me
+    curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/me
     ```
     """
     user_id, plan = user["id"], user["plan"]
@@ -147,7 +147,7 @@ async def lookup_ip(
     Look up geolocation for an IP address.
 
     ```
-    curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.ipgeo.io/v1/ip/8.8.8.8
+    curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8
     ```
     """
     # Validate IP format early
@@ -159,7 +159,7 @@ async def lookup_ip(
     # Rate limit
     user_id, plan = user["id"], user["plan"]
     if not await ratelimit.check(user_id, plan):
-        raise HTTPException(429, detail="Rate limit exceeded. Upgrade at ipgeo.io/pricing")
+        raise HTTPException(429, detail="Rate limit exceeded. Upgrade at getipgeo.com/pricing")
 
     # Billing
     if not await billing.deduct(user_id, plan):
@@ -191,7 +191,7 @@ async def batch_lookup(
     Look up up to 100 IPs in a single request.  Accepts JSON body:
 
     ```
-    curl -X POST https://api.ipgeo.io/v1/ip/batch \
+    curl -X POST https://api.getipgeo.com/v1/ip/batch \
       -H "X-API-Key: ipgeo_YOUR_KEY" \
       -H "Content-Type: application/json" \
       -d '{"ips": ["8.8.8.8", "1.1.1.1"]}'
@@ -238,7 +238,7 @@ async def get_usage(user: dict = Depends(auth.authenticate)):
     Return the current billing period's usage.
 
     ```
-    curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.ipgeo.io/v1/usage
+    curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/usage
     ```
     """
     return await billing.get_usage(user["id"])
@@ -336,7 +336,7 @@ async def on_401(request: Request, exc: HTTPException):
         content={
             "error": "unauthorized",
             "message": exc.detail or "Missing or invalid API key",
-            "docs": "https://ipgeo.io/docs#authentication",
+            "docs": "https://getipgeo.com/docs#authentication",
         },
     )
 
@@ -348,6 +348,6 @@ async def on_429(request: Request, exc: HTTPException):
         content={
             "error": "rate_limited",
             "message": exc.detail or "Too many requests",
-            "docs": "https://ipgeo.io/pricing",
+            "docs": "https://getipgeo.com/pricing",
         },
     )

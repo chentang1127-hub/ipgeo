@@ -5,7 +5,7 @@ Fast, affordable IP geolocation API.  Look up country, city, coordinates, ISP, A
 ## Quickstart
 
 ```bash
-curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.ipgeo.io/v1/ip/8.8.8.8
+curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8
 ```
 
 ```json
@@ -39,7 +39,7 @@ curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.ipgeo.io/v1/ip/8.8.8.8
 | **Pro** | $49 | 50,000 | 1,200/min |
 | **Business** | $199 | 250,000 | 6,000/min |
 
-See [ipgeo.io/pricing](https://ipgeo.io) for details.
+See [getipgeo.com/pricing](https://getipgeo.com) for details.
 
 ## Running locally
 

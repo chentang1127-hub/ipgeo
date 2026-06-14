@@ -1,0 +1,309 @@
+{
+  "app": "IPGeo",
+  "data_source": "MaxMind GeoLite2 (free)",
+  "city_db_size_mb": 63.3834342956543,
+  "asn_db_size_mb": 11.747197151184082,
+  "sample_response_8_8_8_8": {
+    "ip": "8.8.8.8",
+    "country": {
+      "code": "US",
+      "name": "United States"
+    },
+    "latitude": 37.751,
+    "longitude": -97.822,
+    "accuracy_radius_km": 1000,
+    "timezone": "America/Chicago",
+    "continent": {
+      "code": "NA",
+      "name": "North America"
+    },
+    "network": {
+      "isp": "Google LLC",
+      "asn": 15169
+    }
+  },
+  "latency": {
+    "p50_us": 0.2999995558639057,
+    "p95_us": 0.30000046535860747,
+    "p99_us": 0.4000003173132427,
+    "qps_single_thread": 2434867.2998810015
+  },
+  "throughput": {
+    "mixed_5_ip_qps": 2104199.9831030415,
+    "mixed_p50_us": 0.30000046535860747
+  },
+  "data_completeness": {
+    "total_ips_tested": 25,
+    "city_fill_pct": 36.8,
+    "isp_fill_pct": 94.7,
+    "postal_fill_pct": 36.8,
+    "coords_fill_pct": 84.2,
+    "timezone_fill_pct": 84.2,
+    "asn_fill_pct": 94.7
+  },
+  "per_ip_details": [
+    {
+      "ip": "8.8.8.8",
+      "desc": "Google DNS (US)",
+      "country": "US",
+      "city": "-",
+      "isp": "Google LLC",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "1.1.1.1",
+      "desc": "Cloudflare DNS (US)",
+      "country": "?",
+      "city": "-",
+      "isp": "Cloudflare, Inc.",
+      "fields": 2,
+      "status": "",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "8.8.4.4",
+      "desc": "Google DNS secondary (US)",
+      "country": "US",
+      "city": "Westfield",
+      "isp": "Google LLC",
+      "fields": 11,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "208.67.222.222",
+      "desc": "OpenDNS (US)",
+      "country": "US",
+      "city": "-",
+      "isp": "Cisco OpenDNS, LLC",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "9.9.9.9",
+      "desc": "Quad9 (EU/CH)",
+      "country": "?",
+      "city": "-",
+      "isp": "Quad9",
+      "fields": 2,
+      "status": "",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "77.88.8.8",
+      "desc": "Yandex DNS (RU)",
+      "country": "RU",
+      "city": "-",
+      "isp": "YANDEX LLC",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "195.82.147.49",
+      "desc": "UK ISP (BT)",
+      "country": "EE",
+      "city": "-",
+      "isp": "-",
+      "fields": 7,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "194.158.96.55",
+      "desc": "Swisscom (CH)",
+      "country": "FR",
+      "city": "-",
+      "isp": "Bouygues Telecom SA",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "114.114.114.114",
+      "desc": "China DNS",
+      "country": "CN",
+      "city": "-",
+      "isp": "Zenlayer Inc",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "223.5.5.5",
+      "desc": "AliDNS (CN)",
+      "country": "CN",
+      "city": "Hangzhou",
+      "isp": "Alibaba (US) Technology Co., Ltd.",
+      "fields": 10,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "103.235.46.40",
+      "desc": "India ISP",
+      "country": "HK",
+      "city": "-",
+      "isp": "Beijing Baidu Netcom Science and Technology Co., Ltd.",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "203.104.209.71",
+      "desc": "Japan ISP",
+      "country": "JP",
+      "city": "Tokyo",
+      "isp": "AS for DATAHOTEL, which is one of iDC in Japan,",
+      "fields": 11,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "177.54.148.1",
+      "desc": "Brazil ISP",
+      "country": "BR",
+      "city": "São Paulo",
+      "isp": "Latitude.sh LTDA",
+      "fields": 11,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "190.210.144.1",
+      "desc": "Argentina ISP",
+      "country": "AR",
+      "city": "-",
+      "isp": "NSS S.A.",
+      "fields": 10,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "203.2.218.14",
+      "desc": "Australia ISP",
+      "country": "AU",
+      "city": "Sydney",
+      "isp": "Australian Broadcasting Corporation",
+      "fields": 11,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "102.66.176.4",
+      "desc": "South Africa ISP",
+      "country": "ZA",
+      "city": "Brakpan",
+      "isp": "HERO TELECOMS (PTY) LTD",
+      "fields": 11,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "2001:4860:4860::8888",
+      "desc": "Google DNS v6",
+      "country": "US",
+      "city": "-",
+      "isp": "Google LLC",
+      "fields": 8,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "2606:4700:4700::1111",
+      "desc": "Cloudflare DNS v6",
+      "country": "?",
+      "city": "-",
+      "isp": "Cloudflare, Inc.",
+      "fields": 2,
+      "status": "",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "2a00:1450:4009:811::200e",
+      "desc": "Google v6 (EU)",
+      "country": "GB",
+      "city": "London",
+      "isp": "Google LLC",
+      "fields": 11,
+      "status": "",
+      "has_coords": true,
+      "has_timezone": true
+    },
+    {
+      "ip": "192.168.1.1",
+      "desc": "Private IPv4",
+      "country": "XX",
+      "city": "-",
+      "isp": "-",
+      "fields": 3,
+      "status": "(private)",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "10.0.0.1",
+      "desc": "Private IPv4",
+      "country": "XX",
+      "city": "-",
+      "isp": "-",
+      "fields": 3,
+      "status": "(private)",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "127.0.0.1",
+      "desc": "Loopback",
+      "country": "XX",
+      "city": "-",
+      "isp": "-",
+      "fields": 3,
+      "status": "(private)",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "fc00::1",
+      "desc": "Unique Local v6",
+      "country": "XX",
+      "city": "-",
+      "isp": "-",
+      "fields": 3,
+      "status": "(private)",
+      "has_coords": false,
+      "has_timezone": false
+    },
+    {
+      "ip": "invalid",
+      "desc": "Invalid input",
+      "error": "Invalid IP address"
+    },
+    {
+      "ip": "",
+      "desc": "Empty string",
+      "error": "Invalid IP address"
+    }
+  ]
+}
