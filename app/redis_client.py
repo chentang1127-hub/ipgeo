@@ -65,6 +65,21 @@ class InMemoryStore:
     async def decrby(self, key: str, amount: int) -> int:
         return await self.incrby(key, -amount)
 
+    async def hincrby(self, key: str, field: str, amount: int = 1) -> int:
+        """Increment a field in a hash. Creates the hash if needed."""
+        hash_key = f"_hash:{key}"
+        if hash_key not in self._data:
+            self._data[hash_key] = {}
+        import json
+        try:
+            h = json.loads(self._data[hash_key])
+        except (json.JSONDecodeError, TypeError):
+            h = {}
+        val = h.get(field, 0) + amount
+        h[field] = val
+        self._data[hash_key] = json.dumps(h)
+        return val
+
     async def aclose(self) -> None:
         pass
 

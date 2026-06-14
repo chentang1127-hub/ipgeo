@@ -562,6 +562,26 @@
 </footer>
 
 <script>
+// ── Analytics (fire-and-forget, never blocks the page) ──
+var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
+function _track(event, extra) {
+  var payload = {event: event, page: location.pathname, referrer: document.referrer};
+  if (extra) Object.assign(payload, extra);
+  try {
+    fetch(_ANALYTICS, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)}).catch(function(){});
+  } catch(e) {}
+}
+_track('page_view');
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('a');
+  if (!el) return;
+  var href = el.getAttribute('href') || '';
+  var m = href.match(/\/signup\?plan=(free|starter|pro|business)/);
+  if (m) _track('pricing_click', {plan: m[1]});
+  if (href === '/signup?plan=free' && el.classList.contains('btn-primary')) _track('signup_start', {plan: 'free'});
+  if (el.classList.contains('btn-nav')) _track('signup_start', {plan: 'free', source: 'nav'});
+});
+
 // Copy curl command
 function copyCurl() {
   const text = 'curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8';
@@ -580,7 +600,7 @@ async function runDemo() {
   const btn = document.getElementById('demo-btn');
   const result = document.getElementById('demo-result');
   const ip = input.value.trim() || '8.8.8.8';
-
+  _track('demo_try', {ip: ip});
   btn.textContent = '...'; btn.disabled = true;
   result.classList.remove('show', 'error');
   result.textContent = '';

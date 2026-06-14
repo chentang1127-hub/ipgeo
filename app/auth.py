@@ -81,10 +81,14 @@ async def authenticate(request: Request) -> dict:
     )
 
     if not api_key:
+        from .metrics import record_auth_failure
+        record_auth_failure("missing_key")
         raise HTTPException(status_code=401, detail="Missing X-API-Key header")
 
     user = await validate(api_key)
     if user is None:
+        from .metrics import record_auth_failure
+        record_auth_failure("invalid_key")
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     return user

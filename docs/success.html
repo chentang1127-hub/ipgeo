@@ -75,6 +75,15 @@
 </div>
 
 <script>
+// ── Analytics ──
+var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
+function _track(event, extra) {
+  var payload = {event: event, page: location.pathname, referrer: document.referrer};
+  if (extra) Object.assign(payload, extra);
+  try { fetch(_ANALYTICS, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)}).catch(function(){}); } catch(e) {}
+}
+_track('page_view');
+
 async function main() {
   const params = new URLSearchParams(window.location.search);
   const checkoutId = params.get('checkout_id');
@@ -146,6 +155,7 @@ async function main() {
 }
 
 function showResult(apiKey, plan) {
+  _track('signup_complete', {plan: plan});
   document.getElementById('spinner').style.display = 'none';
   document.getElementById('check').style.display = 'flex';
   document.getElementById('title').textContent = "You're All Set!";

@@ -80,6 +80,15 @@
 </div>
 
 <script>
+// ── Analytics ──
+var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
+function _track(event, extra) {
+  var payload = {event: event, page: location.pathname, referrer: document.referrer};
+  if (extra) Object.assign(payload, extra);
+  try { fetch(_ANALYTICS, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)}).catch(function(){}); } catch(e) {}
+}
+_track('page_view');
+
 let selectedPlan = 'pro';
 let selectedPriceId = 'pri_01kv2fyaj4ek50cxrbw7f332eh';
 
@@ -123,11 +132,14 @@ async function handleSubmit() {
     return;
   }
 
+  _track('signup_start', {plan: selectedPlan});
+
   const btn = document.getElementById('submit');
   btn.classList.add('loading');
   btn.disabled = true;
 
   try {
+    if (selectedPlan === 'free') _track('signup_complete', {plan: 'free'});
     // Free plan — skip Paddle, create key directly
     if (selectedPlan === 'free') {
       const resp = await fetch('https://api.getipgeo.com/v1/auth/register-free', {

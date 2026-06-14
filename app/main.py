@@ -11,6 +11,7 @@ Endpoints:
 
 import ipaddress
 import logging
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
@@ -19,31 +20,20 @@ from typing import Optional
 from fastapi import FastAPI, Request, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 from .config import get_settings
 from .geodb import GeoReader
 from .redis_client import init_redis, close_redis, get_redis
+from .middleware import MetricsMiddleware
 from . import auth
 from . import billing
 from .billing import PLAN_QUOTAS
+from . import metrics as m
 from . import ratelimit
 from . import webhooks
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Metrics
-# ---------------------------------------------------------------------------
-lookup_count = Counter(
-    "ipgeo_lookups_total", "Total lookups", ["endpoint", "plan", "status"]
-)
-lookup_duration = Histogram(
-    "ipgeo_lookup_duration_seconds",
-    "Lookup duration",
-    ["endpoint"],
-    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0],
-)
 
 # ---------------------------------------------------------------------------
 # Global state
@@ -96,6 +86,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["X-API-Key", "Content-Type"],
 )
+app.add_middleware(MetricsMiddleware)
 
 # ---------------------------------------------------------------------------
 # Endpoints
@@ -117,9 +108,11 @@ async def lookup_my_ip(
     user_id, plan = user["id"], user["plan"]
 
     if not await ratelimit.check(user_id, plan):
+        m.record_rate_limit_hit(plan, "ratelimit")
         raise HTTPException(429, detail="Rate limit exceeded")
 
     if not await billing.deduct(user_id, plan):
+        m.record_rate_limit_hit(plan, "quota")
         raise HTTPException(429, detail="Monthly quota exhausted")
 
     # Extract real client IP from headers
@@ -130,8 +123,9 @@ async def lookup_my_ip(
         or request.client.host
     )
 
-    result = geo.lookup(client_ip, plan)
-    lookup_count.labels(endpoint="me", plan=plan, status="ok").inc()
+    with m.record_lookup_duration("me"):
+        result = geo.lookup(client_ip, plan)
+    m.record_lookup("me", plan, "ok")
     return result
 
 
@@ -160,17 +154,20 @@ async def lookup_ip(
     # Rate limit
     user_id, plan = user["id"], user["plan"]
     if not await ratelimit.check(user_id, plan):
+        m.record_rate_limit_hit(plan, "ratelimit")
         raise HTTPException(429, detail="Rate limit exceeded. Upgrade at getipgeo.com/pricing")
 
     # Billing
     if not await billing.deduct(user_id, plan):
+        m.record_rate_limit_hit(plan, "quota")
         raise HTTPException(
             429,
             detail="Monthly quota exhausted. Upgrade your plan or add prepaid credits.",
         )
 
     # Lookup
-    result = geo.lookup(ip, plan)
+    with m.record_lookup_duration("lookup"):
+        result = geo.lookup(ip, plan)
 
     # Field filtering
     if fields:
@@ -178,7 +175,7 @@ async def lookup_ip(
         field_set.add("ip")
         result = {k: v for k, v in result.items() if k in field_set}
 
-    lookup_count.labels(endpoint="lookup", plan=plan, status="ok").inc()
+    m.record_lookup("lookup", plan, "ok")
     return result
 
 
@@ -220,16 +217,20 @@ async def batch_lookup(
     # Rate limit + billing (charge for each IP)
     count = len(ips)
     if not await ratelimit.check(user_id, plan, count):
+        m.record_rate_limit_hit(plan, "ratelimit")
         raise HTTPException(429, detail="Rate limit exceeded")
 
     if not await billing.deduct(user_id, plan, count):
+        m.record_rate_limit_hit(plan, "quota")
         raise HTTPException(429, detail="Monthly quota exceeded")
 
     # Parallel lookups via thread pool
+    t0 = time.perf_counter()
     with ThreadPoolExecutor(max_workers=20) as pool:
         results = list(pool.map(lambda ip: geo.lookup(ip, plan), ips))
+    m.lookup_duration_seconds.labels(endpoint="batch").observe(time.perf_counter() - t0)
 
-    lookup_count.labels(endpoint="batch", plan=plan, status="ok").inc(count)
+    m.record_lookup("batch", plan, "ok", count)
     return {"results": results}
 
 
@@ -290,6 +291,7 @@ async def auth_register_free(request: Request):
     api_key = await auth.create(user_id, "free")
 
     logger.info("Free registration: user=%s email=%s", user_id, email)
+    m.record_registration("free", "free")
     return {"api_key": api_key, "plan": "free", "user_id": user_id}
 
 
@@ -318,6 +320,7 @@ async def auth_claim_by_email(request: Request):
     api_key = await auth.create(user_id, plan)
 
     logger.info("Claim-by-email: user=%s plan=%s", user_id, plan)
+    m.record_registration(plan, "claim")
     return {"api_key": api_key, "plan": plan, "user_id": user_id}
 
 
@@ -449,8 +452,50 @@ async def auth_claim(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Admin endpoints (behind ADMIN_TOKEN)
+# Analytics event collector (website JS beacon)
 # ---------------------------------------------------------------------------
+
+@app.post("/v1/analytics/event")
+async def analytics_event(request: Request):
+    """
+    Collect a website analytics event.  No auth required.
+
+    Request body:
+        { "event": "page_view", "page": "/", "referrer": "https://..." }
+
+    Events: page_view, demo_try, pricing_click, signup_start, signup_complete
+
+    Stored in Prometheus + Redis for persistence.
+    """
+    body = await request.json() or {}
+    event = (body.get("event") or "").strip()
+    page = (body.get("page") or "/").strip()
+    referrer = (body.get("referrer") or "").strip()
+    plan = (body.get("plan") or "").strip()  # optional, for pricing clicks
+    detail = (body.get("detail") or "").strip()  # arbitrary extra data
+
+    if not event:
+        raise HTTPException(400, detail="event is required")
+
+    # Prometheus counter
+    m.record_analytics_event(event, page)
+
+    # Persist to Redis for later querying (daily bucketed)
+    try:
+        from datetime import datetime, timezone
+        redis = get_redis()
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        pipe = redis if hasattr(redis, 'pipeline') else None
+        if hasattr(redis, 'hincrby'):
+            key = f"ipgeo:analytics:{today}:{event}"
+            await redis.hincrby(key, page, 1)
+            if referrer:
+                await redis.hincrby(key, f"ref:{referrer}", 1)
+    except Exception:
+        pass  # analytics persistence is best-effort; never break the request
+
+    return {"ok": True}
+
 
 @app.post("/v1/admin/keys")
 async def admin_create_key(request: Request):
