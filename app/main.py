@@ -20,7 +20,7 @@ from typing import Optional
 from fastapi import FastAPI, Request, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import CONTENT_TYPE_LATEST
 
 from .config import get_settings
 from .geodb import GeoReader
@@ -531,7 +531,7 @@ async def admin_revoke_key(request: Request):
 async def metrics():
     """Prometheus metrics endpoint."""
     from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+    return PlainTextResponse(m.render(), media_type=CONTENT_TYPE_LATEST)
 
 
 # ---------------------------------------------------------------------------

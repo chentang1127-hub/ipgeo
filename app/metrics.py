@@ -16,7 +16,10 @@ Analytics events (fired from website JS):
     ipgeo_analytics_events_total{event, page}
 """
 
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, CollectorRegistry, generate_latest, CONTENT_TYPE_LATEST
+
+# Custom registry — no Python GC / process noise, only our metrics.
+REGISTRY = CollectorRegistry(auto_describe=False)
 
 # ---------------------------------------------------------------------------
 # HTTP-level (recorded by middleware — every request)
@@ -25,12 +28,14 @@ http_requests_total = Counter(
     "ipgeo_http_requests_total",
     "Total HTTP requests",
     ["method", "path", "status"],
+    registry=REGISTRY,
 )
 http_request_duration_seconds = Histogram(
     "ipgeo_http_request_duration_seconds",
     "HTTP request duration in seconds",
     ["method", "path"],
     buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+    registry=REGISTRY,
 )
 
 # ---------------------------------------------------------------------------
@@ -40,12 +45,14 @@ lookups_total = Counter(
     "ipgeo_lookups_total",
     "Total IP lookups",
     ["endpoint", "plan", "status"],
+    registry=REGISTRY,
 )
 lookup_duration_seconds = Histogram(
     "ipgeo_lookup_duration_seconds",
     "Lookup duration in seconds",
     ["endpoint"],
     buckets=[0.0001, 0.0005, 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5],
+    registry=REGISTRY,
 )
 
 # ---------------------------------------------------------------------------
@@ -55,11 +62,13 @@ auth_failures_total = Counter(
     "ipgeo_auth_failures_total",
     "Authentication failures",
     ["reason"],
+    registry=REGISTRY,
 )
 rate_limit_hits_total = Counter(
     "ipgeo_rate_limit_hits_total",
     "Rate limit blocks",
     ["plan", "type"],  # type = ratelimit | quota
+    registry=REGISTRY,
 )
 
 # ---------------------------------------------------------------------------
@@ -69,6 +78,7 @@ registrations_total = Counter(
     "ipgeo_registrations_total",
     "New user registrations",
     ["plan", "method"],  # method = free | claim | paddle
+    registry=REGISTRY,
 )
 
 # ---------------------------------------------------------------------------
@@ -78,7 +88,13 @@ analytics_events_total = Counter(
     "ipgeo_analytics_events_total",
     "Website analytics events",
     ["event", "page"],
+    registry=REGISTRY,
 )
+
+
+def render() -> bytes:
+    """Generate Prometheus text from our registry (no Python GC / process noise)."""
+    return generate_latest(REGISTRY)
 
 
 # ---------------------------------------------------------------------------
