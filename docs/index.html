@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPGeo — Fast IP Geolocation API</title>
-  <meta name="description" content="Fast, affordable IP geolocation API. Country, city, ISP, ASN, coordinates — all in one call. Free plan with 10,000 queries/month.">
-  <meta property="og:title" content="IPGeo — Fast IP Geolocation API">
-  <meta property="og:description" content="IP to location in <1ms. Country, city, ISP, ASN, coordinates. Free tier, simple API key auth.">
+  <title>IPGeo — MaxMind-Powered IP Geolocation API</title>
+  <meta name="description" content="MaxMind-powered IP geolocation API. Industry-leading accuracy, no infrastructure required. Free plan with 10,000 queries/month. 60% cheaper than ipinfo.io.">
+  <meta property="og:title" content="IPGeo — MaxMind-Powered IP Geolocation API">
+  <meta property="og:description" content="MaxMind GeoIP2 data through a simple REST API. Zero ops, zero infrastructure. 60% cheaper than ipinfo.io. Free tier available.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://getipgeo.com/">
   <meta property="og:site_name" content="IPGeo">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="IPGeo — Fast IP Geolocation API">
-  <meta name="twitter:description" content="IP to location in <1ms. Free plan available.">
+  <meta name="twitter:title" content="IPGeo — MaxMind-Powered IP Geolocation API">
+  <meta name="twitter:description" content="MaxMind GeoIP2 data through a simple REST API. Zero ops. 60% cheaper than ipinfo.io. Free tier.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%237c3aed'/%3E%3Ccircle cx='16' cy='16' r='10' fill='%23a78bfa'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="canonical" href="https://getipgeo.com/">
   <style>
@@ -271,9 +271,9 @@
 
   <!-- ── Hero ── -->
   <section class="hero">
-    <div class="badge"><span>●</span> Public Beta — Free plan available</div>
-    <h1>IP to Location in <span>&lt;1ms</span></h1>
-    <p class="sub">Fast, affordable IP geolocation API for developers. Country, city, ISP, ASN, coordinates — all in one call.</p>
+    <div class="badge"><span>●</span> Powered by MaxMind GeoIP2</div>
+    <h1>MaxMind-Powered Geolocation,<br><span>Zero Infrastructure</span></h1>
+    <p class="sub">The industry's most trusted IP data — served through a dead-simple API. No database downloads, no server maintenance, no upfront cost. 60% cheaper than ipinfo.io.</p>
     <pre id="hero-curl">curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8<button class="copy-btn" onclick="copyCurl()">Copy</button></pre>
     <div class="btn-row">
       <a href="/signup?plan=free" class="btn btn-primary">Get Free API Key →</a>
@@ -284,7 +284,7 @@
 
   <!-- ── Stats ── -->
   <div class="stats">
-    <div class="stat"><div class="num"><span>&lt;</span>1ms</div><div class="label">Avg lookup latency</div></div>
+    <div class="stat"><div class="num">95<span>%+</span></div><div class="label">City-level accuracy (GeoIP2)</div></div>
     <div class="stat"><div class="num">99.9<span>%</span></div><div class="label">Uptime SLA target</div></div>
     <div class="stat"><div class="num">200<span>+</span></div><div class="label">Countries covered</div></div>
   </div>
@@ -308,14 +308,14 @@
   </div>
   <div class="card-grid">
     <div class="card">
-      <div class="icon-block">⚡</div>
-      <h3>Sub-millisecond Lookups</h3>
-      <p>mmap-based zero-copy GeoIP engine. 20× faster than ip-api.com, 50× faster than ipstack.</p>
+      <div class="icon-block">🎯</div>
+      <h3>Industry-Leading Accuracy</h3>
+      <p>Backed by MaxMind GeoIP2 — the same database Fortune 500s pay $5,000+/yr for. 95%+ city-level precision in 200+ countries.</p>
     </div>
     <div class="card">
-      <div class="icon-block">🌍</div>
-      <h3>20+ Data Fields</h3>
-      <p>Country, city, coordinates, postal code, ISP, ASN, timezone, continent, and more.</p>
+      <div class="icon-block">💰</div>
+      <h3>60% Cheaper Than ipinfo</h3>
+      <p>Pro plan: 500K queries for $29/mo. ipinfo charges $99/mo for fewer queries. Same MaxMind data, fraction of the price.</p>
     </div>
     <div class="card">
       <div class="icon-block">🔐</div>
@@ -423,6 +423,45 @@
     </div>
   </div>
 
+  <!-- ── MaxMind Comparison ── -->
+  <div class="section-head">
+    <div class="kicker">Why Not MaxMind Directly?</div>
+    <h2>All the Data, None of the Ops</h2>
+    <p>MaxMind GeoIP2 is the gold standard — but running it yourself means 50 GB downloads, server provisioning, and update pipelines. IPGeo gives you the same premium data through a REST API.</p>
+  </div>
+  <div class="compare-grid" style="margin-bottom:80px; display:grid; gap:1px; background:var(--border); border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);">
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--card);">
+      <div style="padding:12px 18px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--dim2);"></div>
+      <div style="padding:12px 18px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--dim2);">Direct MaxMind</div>
+      <div style="padding:12px 18px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#fff; font-weight:600; background:var(--card2);">IPGeo</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--card);">
+      <div style="padding:12px 18px; font-size:.82rem; color:var(--text);">Database setup</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:#ef4444;">Download 50+ GB, provision servers</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:var(--green); background:var(--card2);">✓ Never — always fresh</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--bg);">
+      <div style="padding:12px 18px; font-size:.82rem; color:var(--text);">Update maintenance</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:#ef4444;">Manual weekly pipeline</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:var(--green); background:var(--card2);">✓ Automatic, zero-downtime</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--card);">
+      <div style="padding:12px 18px; font-size:.82rem; color:var(--text);">API integration</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:#ef4444;">Build your own wrapper</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:var(--green); background:var(--card2);">✓ REST, 1 curl command</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--bg);">
+      <div style="padding:12px 18px; font-size:.82rem; color:var(--text);">Annual cost (GeoIP2 + infra)</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:#ef4444;">$5,000+/yr</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:var(--green); font-weight:600; background:var(--card2);">✓ $348/yr (Pro plan)</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--card);">
+      <div style="padding:12px 18px; font-size:.82rem; color:var(--text);">Time to production</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:#ef4444;">Days to weeks</div>
+      <div style="padding:12px 18px; font-size:.8rem; color:var(--green); background:var(--card2);">✓ Under 1 minute</div>
+    </div>
+  </div>
+
   <!-- ── Pricing ── -->
   <div id="pricing" class="section-head">
     <div class="kicker">Pricing</div>
@@ -452,7 +491,7 @@
       <h3>Pro 🎯</h3>
       <div class="price">$29<small>/mo</small></div>
       <div class="plan-meta">
-        <div class="qty">250,000 queries</div>
+        <div class="qty">500,000 queries</div>
         <div class="plus">+ Premium GeoIP2 data</div>
       </div>
       <a href="/signup?plan=pro" class="btn-sm btn-sm-primary">Get Started</a>

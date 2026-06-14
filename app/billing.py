@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 PLAN_QUOTAS = {
     "free": 10_000,
     "starter": 100_000,
-    "pro": 250_000,
+    "pro": 500_000,
     "business": 1_000_000,
     "enterprise": 0,  # unmetered
 }
@@ -49,7 +49,7 @@ async def deduct(user_id: str, plan: str, count: int = 1) -> bool:
     local quotas = {
         free      = 10000,
         starter   = 100000,
-        pro       = 250000,
+        pro       = 500000,
         business  = 1000000
     }
     local quota = quotas[plan] or 10000

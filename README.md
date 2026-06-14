@@ -57,7 +57,7 @@ Full OpenAPI docs: [api.getipgeo.com/docs](https://api.getipgeo.com/docs)
 |------|---------|-----------|------------|------|
 | **Free** | $0 | 10,000 | 60/min | GeoLite2 |
 | **Starter** | $9 | 100,000 | 600/min | GeoLite2 |
-| **Pro** 🎯 | $29 | 250,000 | 3,000/min | **GeoIP2** |
+| **Pro** 🎯 | $29 | 500,000 | 3,000/min | **GeoIP2** |
 | **Business** | $79 | 1,000,000 | 10,000/min | **GeoIP2** |
 
 Pro & Business use MaxMind GeoIP2 (paid) for 95%+ city fill rate vs ~37% with GeoLite2.
