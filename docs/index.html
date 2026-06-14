@@ -191,7 +191,22 @@
     .proof-item .label { font-size: .75rem; color: var(--dim); }
 
     /* ── Pricing ── */
-    .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 80px; align-items: stretch; }
+    .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 40px; align-items: stretch; }
+
+    /* ── Payment Methods ── */
+    .payment-methods { text-align: center; margin-bottom: 80px; }
+    .payment-methods .payment-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--dim2); margin-bottom: 16px; }
+    .payment-icons { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px; }
+    .payment-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 36px; padding: 0 12px; border-radius: 6px;
+      background: var(--card2); border: 1px solid var(--border);
+      font-size: .75rem; font-weight: 700; color: var(--dim); letter-spacing: .02em;
+      transition: border-color .2s, color .2s; gap: 6px; white-space: nowrap;
+    }
+    .payment-icon:hover { border-color: var(--dim2); color: var(--text); }
+    .payment-icon svg { width: 22px; height: 16px; flex-shrink: 0; }
+    .payment-note { font-size: .68rem; color: var(--dim2); margin-top: 14px; }
     .plan {
       background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 24px 16px; text-align: center; transition: border-color .2s;
@@ -461,6 +476,46 @@
       </div>
       <a href="mailto:chentang1127@gmail.com" class="btn-sm btn-sm-outline">Contact Sales</a>
     </div>
+  </div>
+
+  <!-- ── Accepted Payments ── -->
+  <div class="payment-methods">
+    <p class="payment-label">Accepted Payments</p>
+    <div class="payment-icons">
+      <!-- Visa -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#1a1f71"/><text x="5" y="17" font-size="10" font-weight="800" fill="#fff" font-family="sans-serif">VISA</text></svg>
+      </span>
+      <!-- Mastercard -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#1c1c1c"/><circle cx="14" cy="12" r="7" fill="#eb001b" opacity=".9"/><circle cx="22" cy="12" r="7" fill="#f79e1b" opacity=".9"/><text x="10" y="18" font-size="6.5" font-weight="700" fill="#fff" font-family="sans-serif">MC</text></svg>
+      </span>
+      <!-- American Express -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#2d6ec7"/><text x="4" y="17" font-size="8" font-weight="700" fill="#fff" font-family="sans-serif">AMEX</text></svg>
+      </span>
+      <!-- PayPal -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#003087"/><text x="4" y="17" font-size="8" font-weight="700" fill="#fff" font-family="sans-serif">PayPal</text></svg>
+      </span>
+      <!-- Apple Pay -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#000"/><text x="4" y="17" font-size="8" font-weight="600" fill="#fff" font-family="sans-serif">Apple Pay</text></svg>
+      </span>
+      <!-- Google Pay -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#f8f9fa" stroke="#dadce0"/><text x="4" y="17" font-size="8" font-weight="600" fill="#3c4043" font-family="sans-serif">Google Pay</text></svg>
+      </span>
+      <!-- Alipay -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#1677ff"/><text x="7" y="17" font-size="8.5" font-weight="700" fill="#fff" font-family="sans-serif">Alipay</text></svg>
+      </span>
+      <!-- UnionPay -->
+      <span class="payment-icon">
+        <svg viewBox="0 0 36 24" fill="none"><rect width="36" height="24" rx="3" fill="#c41230"/><text x="3" y="17" font-size="7" font-weight="700" fill="#fff" font-family="sans-serif">UnionPay</text></svg>
+      </span>
+    </div>
+    <p class="payment-note">Secured by Paddle — PCI DSS compliant · 31 currencies · 200+ countries</p>
   </div>
 
   <!-- ── Pre-Footer CTA ── -->
