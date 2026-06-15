@@ -186,8 +186,7 @@
       '#lang-selector .lang-option.active {' +
       '  color: var(--accent, #7c3aed); font-weight: 600;' +
       '  background: rgba(124,58,237,0.08);' +
-      '}' +
-      /* Divider between options */;
+      '}';
     document.head.appendChild(style);
   }
 
