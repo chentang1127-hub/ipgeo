@@ -34,17 +34,18 @@ class Settings(BaseSettings):
     # Rate-limit window in seconds
     ratelimit_window: int = 60
 
-    # Paddle billing
-    paddle_api_key: str = ""
-    paddle_webhook_secret: str = ""
-    paddle_sandbox: bool = True  # True = Paddle sandbox, False = live
+    # Lemon Squeezy billing
+    lemonsqueezy_api_key: str = ""
+    lemonsqueezy_webhook_secret: str = ""
+    lemonsqueezy_store_id: str = ""
 
-    # Paddle price ID → IPGeo plan mapping
-    paddle_price_plan_map: dict[str, str] = {
-        "pri_01kv2fm7b7y2bwptwjeyq6gt36": "free",
-        "pri_01kv2fsash4j8ed9m2swmbst7z": "starter",
-        "pri_01kv2fyaj4ek50cxrbw7f332eh": "pro",
-        "pri_01kv2g0mdbeze07k2rqdcqykse": "business",
+    # Lemon Squeezy variant ID → IPGeo plan mapping
+    # Create variants in LS dashboard, then paste their IDs here.
+    lemonsqueezy_variant_plan_map: dict[str, str] = {
+        "1794238": "free",
+        "1794256": "starter",
+        "1794262": "pro",
+        "1794265": "business",
     }
 
     @property
@@ -52,10 +53,8 @@ class Settings(BaseSettings):
         return self.environment == "production"
 
     @property
-    def paddle_api_url(self) -> str:
-        if self.paddle_sandbox:
-            return "https://sandbox-api.paddle.com"
-        return "https://api.paddle.com"
+    def lemonsqueezy_api_url(self) -> str:
+        return "https://api.lemonsqueezy.com/v1"
 
 
 @lru_cache

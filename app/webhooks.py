@@ -1,15 +1,14 @@
 """
-Paddle Billing webhook handler.
+Lemon Squeezy billing webhook handler.
 
-Verifies HMAC-SHA256 signatures and processes subscription lifecycle events.
-https://developer.paddle.com/webhooks/overview
+Verifies HMAC-SHA256 signatures and processes order/subscription lifecycle events.
+https://docs.lemonsqueezy.com/api
+https://docs.lemonsqueezy.com/help/webhooks
 """
 
 import hashlib
 import hmac
-import json
 import logging
-from datetime import datetime, timezone
 from typing import Optional
 
 from .config import get_settings
@@ -19,51 +18,55 @@ from . import auth
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Signature verification
+# ---------------------------------------------------------------------------
+
 
 def verify_signature(raw_body: bytes, signature: str, secret: str) -> bool:
     """
-    Verify Paddle webhook signature.
+    Verify a Lemon Squeezy webhook signature.
 
-    Paddle signs the raw request body with HMAC-SHA256 using the webhook secret.
-    The `Paddle-Signature` header contains `ts={timestamp};h1={hmac_hex}`.
+    LS signs the raw request body with HMAC-SHA256 using your webhook secret.
+    The signature is in the ``X-Signature`` header as a hex digest.
     """
     if not signature or not secret:
         return False
 
-    parts = {}
-    for part in signature.split(";"):
-        if "=" in part:
-            k, v = part.split("=", 1)
-            parts[k] = v
+    expected = hmac.new(
+        secret.encode("utf-8"), raw_body, hashlib.sha256
+    ).hexdigest()
 
-    if "ts" not in parts or "h1" not in parts:
-        return False
+    return hmac.compare_digest(expected, signature)
 
-    payload = f"{parts['ts']}:{raw_body.decode()}".encode()
-    expected = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
 
-    return hmac.compare_digest(expected, parts["h1"])
+# ---------------------------------------------------------------------------
+# Event dispatcher
+# ---------------------------------------------------------------------------
 
 
 async def handle_event(event_type: str, data: dict) -> None:
-    """
-    Dispatch Paddle webhook events to the appropriate handler.
-    """
-    logger.info("Paddle webhook: %s (event_id=%s)", event_type, data.get("id", "?"))
+    """Dispatch a Lemon Squeezy webhook event to the appropriate handler."""
+    logger.info("Lemon Squeezy webhook: %s (id=%s)", event_type, data.get("id", "?"))
 
+    # Extract custom_data from top-level meta (LS sends it alongside the resource)
+    # The webhook payload is the resource object; custom_data is nested inside
+    # `data.attributes` for some events.
     handlers = {
-        "transaction.completed": _handle_transaction_completed,
-        "subscription.activated": _handle_subscription_activated,
-        "subscription.updated": _handle_subscription_updated,
-        "subscription.canceled": _handle_subscription_canceled,
-        "transaction.payment_failed": _handle_payment_failed,
+        "order_created": _handle_order_created,
+        "subscription_created": _handle_subscription_created,
+        "subscription_updated": _handle_subscription_updated,
+        "subscription_cancelled": _handle_subscription_cancelled,
+        "subscription_expired": _handle_subscription_expired,
+        "subscription_payment_failed": _handle_payment_failed,
+        "subscription_payment_success": _handle_payment_success,
     }
 
     handler = handlers.get(event_type)
     if handler:
         await handler(data)
     else:
-        logger.debug("Unhandled Paddle event: %s", event_type)
+        logger.debug("Unhandled LS event: %s", event_type)
 
 
 # ---------------------------------------------------------------------------
@@ -71,168 +74,218 @@ async def handle_event(event_type: str, data: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def _handle_transaction_completed(data: dict) -> None:
+async def _handle_order_created(data: dict) -> None:
     """
-    Transaction completed = money received.
+    A new order was placed — this is the primary event for provisioning.
 
-    This is THE most important event. Provision the service:
+    LS sends the full order object.  ``custom_data`` is in
+    ``data.attributes.meta.custom_data`` (for orders created via API checkout)
+    or ``data.attributes.custom_data`` (for older integrations).
 
-    - New subscription  → create API key + set plan
-    - Renewal           → extend access (already handled by subscription status)
-    - One-time purchase → add prepaid credits
+    We extract ``user_id``, provision the plan, and create an API key so the
+    user can claim it immediately on the success page.
     """
-    custom = data.get("custom_data") or {}
-    user_id = custom.get("user_id")
+    attrs = data.get("attributes") or {}
+    meta = attrs.get("meta") or {}
+    custom = meta.get("custom_data") or attrs.get("custom_data") or {}
+    user_id = custom.get("user_id") or ""
 
     if not user_id:
-        logger.warning("transaction.completed without custom_data.user_id — skipping")
+        # Fall back to looking up by checkout
+        logger.warning("order_created without custom_data.user_id — trying checkout lookup")
         return
 
-    # Check items in the transaction
-    items = data.get("items") or []
-    for item in items:
-        price_data = item.get("price") or {}
-        price_id = price_data.get("id", "")
-        product_id = price_data.get("product_id", "")
-
-        # Try to map price → plan
-        settings = get_settings()
-        plan = settings.paddle_price_plan_map.get(price_id)
-
-        if plan:
-            await billing.set_plan(user_id, plan)
-            # Also store the Paddle subscription/customer IDs for management
-            redis = get_redis()
-            subscription_id = data.get("subscription_id", "")
-            customer_id = data.get("customer_id", "")
-            if subscription_id:
-                await redis.set(f"ipgeo:user:{user_id}:paddle_sub", subscription_id)
-            if customer_id:
-                await redis.set(f"ipgeo:user:{user_id}:paddle_customer", customer_id)
-
-            logger.info(
-                "Provisioned: user=%s plan=%s price=%s", user_id, plan, price_id
-            )
+    await _provision_user(user_id, attrs, data.get("id", ""))
 
 
-async def _handle_subscription_activated(data: dict) -> None:
-    """Subscription started — ensure plan is set."""
-    custom = data.get("custom_data") or {}
-    user_id = custom.get("user_id")
+async def _handle_subscription_created(data: dict) -> None:
+    """Subscription created — ensure plan is set (redundant with order_created)."""
+    attrs = data.get("attributes") or {}
+    meta = attrs.get("meta") or {}
+    custom = meta.get("custom_data") or attrs.get("custom_data") or {}
+    user_id = custom.get("user_id") or ""
+
     if not user_id:
         return
 
-    settings = get_settings()
-    items = data.get("items") or []
-    for item in items:
-        price_id = (item.get("price") or {}).get("id", "")
-        plan = settings.paddle_price_plan_map.get(price_id)
-        if plan:
-            await billing.set_plan(user_id, plan)
-            redis = get_redis()
-            await redis.set(
-                f"ipgeo:user:{user_id}:paddle_sub", data.get("id", "")
-            )
-            logger.info("Subscription activated: user=%s plan=%s", user_id, plan)
-            return
+    redis = get_redis()
+    await redis.set(f"ipgeo:user:{user_id}:ls_subscription", data.get("id", ""))
+    await _provision_user(user_id, attrs, data.get("id", ""))
 
 
 async def _handle_subscription_updated(data: dict) -> None:
-    """Subscription changed — update plan."""
-    custom = data.get("custom_data") or {}
-    user_id = custom.get("user_id")
-    if not user_id:
+    """Subscription changed — update plan if variant changed."""
+    attrs = data.get("attributes") or {}
+    variant_id = str(attrs.get("variant_id", ""))
+    customer_id = str(attrs.get("customer_id", ""))
+
+    if not variant_id or not customer_id:
         return
 
-    settings = get_settings()
-    items = data.get("items") or []
-    for item in items:
-        price_id = (item.get("price") or {}).get("id", "")
-        plan = settings.paddle_price_plan_map.get(price_id)
-        if plan:
-            await billing.set_plan(user_id, plan)
-            logger.info("Subscription updated: user=%s plan=%s", user_id, plan)
-            return
+    # Find user by LS customer_id
+    redis = get_redis()
+    user_id = await redis.get(f"ipgeo:customer:{customer_id}:user")
+    if not user_id:
+        logger.warning("subscription_updated: no user for LS customer %s", customer_id)
+        return
 
-    # If status is paused/past_due, we might want to restrict access
-    status = data.get("status", "")
-    if status in ("past_due", "paused"):
+    plan = _plan_from_variant(variant_id)
+    if plan:
+        await billing.set_plan(user_id, plan)
+        logger.info("Subscription updated: user=%s plan=%s", user_id, plan)
+
+    # Handle paused / past_due status
+    status = attrs.get("status", "")
+    if status in ("past_due", "paused", "unpaid"):
         logger.warning(
-            "Subscription %s: user=%s status=%s — consider restricting access",
-            status, user_id, status,
+            "Subscription status=%s user=%s — consider restricting access",
+            status, user_id,
         )
 
 
-async def _handle_subscription_canceled(data: dict) -> None:
-    """Subscription canceled — downgrade to free at period end."""
-    custom = data.get("custom_data") or {}
-    user_id = custom.get("user_id")
-    if not user_id:
-        return
+async def _handle_subscription_cancelled(data: dict) -> None:
+    """Subscription cancelled — will expire at period end (grace period)."""
+    attrs = data.get("attributes") or {}
+    ends_at = attrs.get("ends_at", "unknown")
 
-    # Paddle keeps the subscription active until the end of the billing period.
-    # scheduled_change tells us when it ends.
-    scheduled_change = data.get("scheduled_change") or {}
-    effective_at = scheduled_change.get("effective_at", "unknown")
+    customer_id = str(attrs.get("customer_id", ""))
+    redis = get_redis()
+    user_id = await redis.get(f"ipgeo:customer:{customer_id}:user") if customer_id else None
 
     logger.info(
-        "Subscription canceled: user=%s effective_at=%s (stays active until then)",
-        user_id, effective_at,
+        "Subscription cancelled: user=%s ends_at=%s (active until then)",
+        user_id or "unknown", ends_at,
     )
 
-    # Don't immediately downgrade — the user paid for the period.
-    # We'll handle the actual downgrade when the period ends.
-    # For now, store the effective_at so a cron job or future webhook can act.
+    if user_id:
+        await redis.set(f"ipgeo:user:{user_id}:cancel_effective_at", str(ends_at))
+
+
+async def _handle_subscription_expired(data: dict) -> None:
+    """Subscription expired — downgrade to free."""
+    attrs = data.get("attributes") or {}
+    customer_id = str(attrs.get("customer_id", ""))
     redis = get_redis()
-    await redis.set(f"ipgeo:user:{user_id}:cancel_effective_at", effective_at)
+    user_id = await redis.get(f"ipgeo:customer:{customer_id}:user") if customer_id else None
+
+    if user_id:
+        await billing.set_plan(user_id, "free")
+        logger.info("Subscription expired: user=%s downgraded to free", user_id)
 
 
 async def _handle_payment_failed(data: dict) -> None:
-    """Payment failed — log for now. Could notify the user later."""
-    custom = data.get("custom_data") or {}
-    user_id = custom.get("user_id", "unknown")
+    """Payment failed — log for now."""
+    attrs = data.get("attributes") or {}
     logger.warning(
-        "Payment failed: user=%s transaction=%s",
-        user_id, data.get("id", "?"),
+        "Payment failed: order=%s status=%s",
+        data.get("id", "?"), attrs.get("status", "?"),
+    )
+
+
+async def _handle_payment_success(data: dict) -> None:
+    """Recurring payment succeeded — log for record keeping."""
+    attrs = data.get("attributes") or {}
+    logger.info(
+        "Payment success: subscription=%s total=%s",
+        attrs.get("subscription_id", "?"),
+        attrs.get("total_formatted", "?"),
     )
 
 
 # ---------------------------------------------------------------------------
-# Checkout helpers (for generating Paddle checkout URLs from your backend)
+# Provisioning helper
+# ---------------------------------------------------------------------------
+
+
+async def _provision_user(user_id: str, attrs: dict, order_or_sub_id: str) -> None:
+    """Provision a user with a plan and cache linking info."""
+    redis = get_redis()
+
+    # Check if already provisioned (idempotent)
+    existing = await redis.get(f"ipgeo:user:{user_id}:plan")
+    if existing and existing != "free":
+        logger.info("User %s already provisioned as %s — skipping", user_id, existing)
+        return
+
+    # Determine plan
+    variant_id = str(attrs.get("variant_id", ""))
+    plan = _plan_from_variant(variant_id)
+    if not plan:
+        logger.warning("Cannot determine plan from variant_id=%s", variant_id)
+        return
+
+    await billing.set_plan(user_id, plan)
+
+    # Link customer for future lookups
+    customer_id = str(attrs.get("customer_id", ""))
+    if customer_id:
+        await redis.set(f"ipgeo:customer:{customer_id}:user", user_id)
+
+    # Store LS IDs
+    if attrs.get("subscription_id"):
+        await redis.set(f"ipgeo:user:{user_id}:ls_subscription", str(attrs["subscription_id"]))
+    await redis.set(f"ipgeo:user:{user_id}:ls_order", order_or_sub_id)
+
+    logger.info("Provisioned: user=%s plan=%s variant=%s", user_id, plan, variant_id)
+
+
+def _plan_from_variant(variant_id: str) -> str:
+    """Map a Lemon Squeezy variant ID to an IPGeo plan name."""
+    settings = get_settings()
+    return settings.lemonsqueezy_variant_plan_map.get(variant_id, "")
+
+
+# ---------------------------------------------------------------------------
+# Checkout helpers
 # ---------------------------------------------------------------------------
 
 
 async def create_checkout(
     user_id: str,
-    price_id: str,
+    variant_id: str,
     customer_email: str,
 ) -> dict:
     """
-    Call the Paddle API to create a checkout and return the checkout data.
+    Create a Lemon Squeezy checkout and return the checkout data.
 
-    This is the server-side flow: you create a checkout via Paddle's API,
-    then redirect the user to the returned URL.  When the transaction is
-    complete, Paddle fires the webhook.
+    Call LS ``POST /v1/checkouts`` (JSON:API format), get back a signed
+    checkout URL the user is redirected to.
 
-    https://developer.paddle.com/api-reference/checkout/create
+    Returns::
+
+        {
+            "id": "checkout-uuid",
+            "url": "https://store.lemonsqueezy.com/checkout/...",
+        }
     """
     import httpx
 
     settings = get_settings()
-    url = f"{settings.paddle_api_url}/checkouts"
+    url = f"{settings.lemonsqueezy_api_url}/checkouts"
 
     payload = {
-        "items": [{"price_id": price_id, "quantity": 1}],
-        "custom_data": {"user_id": user_id},
-        "customer": {"email": customer_email},
-        "settings": {
-            "success_url": f"https://getipgeo.com/success?checkout_id={{checkout_id}}",
-        },
+        "data": {
+            "type": "checkouts",
+            "attributes": {
+                "store_id": int(settings.lemonsqueezy_store_id),
+                "variant_id": int(variant_id),
+                "checkout_data": {
+                    "email": customer_email,
+                    "custom": {"user_id": user_id},
+                },
+                "product_options": {
+                    "redirect_url": (
+                        f"https://getipgeo.com/success?checkout_id={{checkout_id}}"
+                    ),
+                },
+            },
+        }
     }
 
     headers = {
-        "Authorization": f"Bearer {settings.paddle_api_key}",
-        "Content-Type": "application/json",
+        "Accept": "application/vnd.api+json",
+        "Content-Type": "application/vnd.api+json",
+        "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
     }
 
     async with httpx.AsyncClient() as client:
@@ -240,97 +293,117 @@ async def create_checkout(
         result = resp.json()
 
         if resp.status_code not in (200, 201):
-            logger.error("Paddle checkout error: %s", result)
-            raise RuntimeError(f"Paddle checkout failed: {result}")
+            logger.error("LS checkout error (status=%s): %s", resp.status_code, result)
+            raise RuntimeError(f"Lemon Squeezy checkout failed: {result}")
 
-        return result["data"]
+        checkout = result.get("data") or {}
+        attrs = checkout.get("attributes") or {}
+        checkout_id = checkout.get("id", "")
+        checkout_url = attrs.get("url", "")
+
+        # Store checkout_id → user_id mapping so we can verify later
+        redis = get_redis()
+        await redis.setex(f"ipgeo:checkout:{checkout_id}", 86400, user_id)
+
+        return {
+            "id": checkout_id,
+            "url": checkout_url,
+        }
 
 
 async def verify_checkout(checkout_id: str) -> Optional[dict]:
     """
-    Query Paddle API for a checkout's status.
+    Verify a Lemon Squeezy checkout by looking up its associated order.
 
-    Used after checkout redirect to verify the user completed payment
-    before issuing an API key.
+    After a customer completes payment:
+    1. LS creates an Order linked to the Checkout.
+    2. We look up the order to confirm payment status.
 
-    Returns None if not found/error, otherwise:
+    Returns ``None`` if not found, otherwise::
+
         {
-            "status": "completed" | "draft" | "expired",
-            "user_id": "...",        # from custom_data
-            "email": "...",          # customer email
-            "price_id": "...",       # plan identifier
+            "status": "paid" | "pending" | "refunded" | ...,
+            "user_id": "...",
+            "email": "...",
+            "variant_id": "...",
         }
     """
     import httpx
 
     settings = get_settings()
-
-    # First try the checkout endpoint
-    check_url = f"{settings.paddle_api_url}/checkouts/{checkout_id}"
     headers = {
-        "Authorization": f"Bearer {settings.paddle_api_key}",
-        "Content-Type": "application/json",
+        "Accept": "application/vnd.api+json",
+        "Content-Type": "application/vnd.api+json",
+        "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
     }
+
+    # First, get the checkout to find its order
+    check_url = f"{settings.lemonsqueezy_api_url}/checkouts/{checkout_id}"
 
     async with httpx.AsyncClient() as client:
-        # Get checkout
         resp = await client.get(check_url, headers=headers)
         if resp.status_code != 200:
-            logger.warning("Paddle checkout lookup failed: %s %s", resp.status_code, resp.text[:200])
-            # Try transaction lookup as fallback (Paddle redirect uses transaction ID sometimes)
-            txn_resp = await client.get(
-                f"{settings.paddle_api_url}/transactions/{checkout_id}",
-                headers=headers,
-            )
-            if txn_resp.status_code != 200:
-                return None
-            txn_data = txn_resp.json().get("data", {})
-            return _parse_transaction(txn_data)
+            logger.warning("LS checkout lookup failed: %s", resp.status_code)
+            return None
 
-        data = resp.json().get("data", {})
+        checkout = resp.json().get("data") or {}
+        attrs = checkout.get("attributes") or {}
+        status = attrs.get("status", "")
 
-    # Extract info from checkout response
-    custom = data.get("custom_data") or {}
-    customer = data.get("customer") or {}
-    items = data.get("items") or []
-    price_id = ""
-    if items:
-        price_id = (items[0].get("price") or {}).get("id", "")
+        # If checkout still active (unpaid), tell caller to retry
+        if status in ("draft", "expired"):
+            return {
+                "status": status,
+                "user_id": "",
+                "email": "",
+                "variant_id": "",
+            }
 
-    # Check if there's a completed transaction
-    transaction_id = data.get("transaction_id", "")
-    status = data.get("status", "")
+        # Check for linked order in relationships
+        relationships = checkout.get("relationships") or {}
+        order_rel = relationships.get("order") or {}
+        order_data = order_rel.get("data") or {}
+        order_id = order_data.get("id", "")
 
-    if status != "completed" and transaction_id:
-        # Verify via transaction endpoint
-        async with httpx.AsyncClient() as client:
-            txn_resp = await client.get(
-                f"{settings.paddle_api_url}/transactions/{transaction_id}",
-                headers=headers,
-            )
-            if txn_resp.status_code == 200:
-                txn_data = txn_resp.json().get("data", {})
-                return _parse_transaction(txn_data)
+        # If no order yet, check if we have the checkout info cached
+        if not order_id:
+            # Fallback: try listing recent orders filtered by email
+            redis = get_redis()
+            user_id = await redis.get(f"ipgeo:checkout:{checkout_id}") or ""
+            # No order = payment not yet completed → retry
+            return {
+                "status": "pending",
+                "user_id": user_id,
+                "email": "",
+                "variant_id": "",
+            }
 
-    return {
-        "status": status,
-        "user_id": custom.get("user_id", ""),
-        "email": customer.get("email", ""),
-        "price_id": price_id,
-    }
+        # Get the order to check its status
+        order_resp = await client.get(
+            f"{settings.lemonsqueezy_api_url}/orders/{order_id}",
+            headers=headers,
+        )
+        if order_resp.status_code != 200:
+            logger.warning("LS order lookup failed: %s", order_resp.status_code)
+            return None
 
+        order = order_resp.json().get("data") or {}
+        order_attrs = order.get("attributes") or {}
+        order_status = order_attrs.get("status", "")
 
-def _parse_transaction(txn: dict) -> dict:
-    """Extract user-facing fields from a Paddle transaction object."""
-    custom = txn.get("custom_data") or {}
-    customer = txn.get("customer") or {}
-    items = txn.get("items") or []
-    price_id = ""
-    if items:
-        price_id = (items[0].get("price") or {}).get("id", "")
-    return {
-        "status": txn.get("status", ""),
-        "user_id": custom.get("user_id", ""),
-        "email": customer.get("email", ""),
-        "price_id": price_id,
-    }
+        # Extract user_id from custom_data
+        order_meta = order_attrs.get("meta") or {}
+        custom = order_meta.get("custom_data") or {}
+        user_id = custom.get("user_id", "")
+
+        # If still no user_id, check our Redis cache
+        if not user_id:
+            redis = get_redis()
+            user_id = await redis.get(f"ipgeo:checkout:{checkout_id}") or ""
+
+        return {
+            "status": order_status,
+            "user_id": user_id,
+            "email": order_attrs.get("user_email", ""),
+            "variant_id": str(order_attrs.get("variant_id", "")),
+        }

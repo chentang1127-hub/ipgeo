@@ -38,7 +38,7 @@ curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8
 |--------|------|-------------|
 | `GET` | `/v1/usage` | Current billing usage & quota |
 | `POST` | `/v1/auth/register-free` | Sign up for a free plan API key |
-| `POST` | `/v1/auth/register` | Sign up & get a Paddle checkout URL |
+| `POST` | `/v1/auth/register` | Sign up & get a Lemon Squeezy checkout URL |
 | `POST` | `/v1/auth/claim` | Claim your API key after checkout |
 | `POST` | `/v1/auth/claim-by-email` | Recover your API key by email |
 
@@ -97,7 +97,7 @@ Without Redis, the app falls back to an in-memory store (dev mode).  Set `IPGEO_
 - **Redis** — billing, rate limiting, API key storage with Lua atomic scripts
 - **FastAPI** — async Python, auto-generated OpenAPI docs at `/docs`
 - **Docker Compose** — 3-service stack: Redis + IPGeo + Nginx behind Cloudflare
-- **Paddle Billing** — merchant-of-record checkout flow, automatic plan provisioning via webhooks
+- **Lemon Squeezy Billing** — merchant-of-record checkout flow, automatic plan provisioning via webhooks
 
 ## License
 

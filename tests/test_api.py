@@ -279,63 +279,79 @@ class TestAdmin:
 
 
 # ---------------------------------------------------------------------------
-# Paddle webhook
+# Lemon Squeezy webhook
 # ---------------------------------------------------------------------------
 
-class TestPaddleWebhook:
+class TestLemonSqueezyWebhook:
     def _sign(self, body: bytes, secret: str) -> str:
-        ts = str(int(time.time()))
-        payload = f"{ts}:{body.decode()}"
-        h1 = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
-        return f"ts={ts};h1={h1}"
+        """LS uses raw HMAC-SHA256 hex digest."""
+        return hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
 
     async def test_webhook_missing_signature(self, client: AsyncClient):
-        resp = await client.post("/v1/webhooks/paddle")
+        resp = await client.post("/v1/webhooks/lemonsqueezy")
         assert resp.status_code == 401
 
     async def test_webhook_bad_signature(self, client: AsyncClient):
-        body_dict = {"event_type": "test"}
+        body_dict = {"data": {"type": "orders", "id": "1"}}
         body_bytes = json.dumps(body_dict).encode()
         sig = self._sign(body_bytes, "wrong-secret")
         resp = await client.post(
-            "/v1/webhooks/paddle",
-            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            "/v1/webhooks/lemonsqueezy",
+            headers={"X-Signature": sig, "Content-Type": "application/json"},
             content=body_bytes,
         )
         assert resp.status_code == 401
 
     async def test_webhook_valid_signature(self, client: AsyncClient):
-        body_dict = {"event_type": "transaction.completed", "data": {"id": "txn_test"}}
+        body_dict = {
+            "data": {
+                "type": "orders",
+                "id": "order_test",
+                "attributes": {"status": "paid"},
+            }
+        }
         body_bytes = json.dumps(body_dict).encode()
-        sig = self._sign(body_bytes, "test-paddle-secret")
+        sig = self._sign(body_bytes, "test-ls-secret")
         resp = await client.post(
-            "/v1/webhooks/paddle",
-            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            "/v1/webhooks/lemonsqueezy",
+            headers={
+                "X-Signature": sig,
+                "X-Event-Name": "order_created",
+                "Content-Type": "application/json",
+            },
             content=body_bytes,
         )
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 
-    async def test_webhook_transaction_completed_sets_plan(self, client: AsyncClient):
-        """A transaction.completed with a mapped price should provision the user."""
+    async def test_webhook_order_created_sets_plan(self, client: AsyncClient):
+        """An order_created with a mapped variant should provision the user."""
         settings = get_settings()
-        settings.paddle_price_plan_map = {"pri_test_123": "pro"}
+        settings.lemonsqueezy_variant_plan_map = {"12345": "pro"}
 
         body_dict = {
-            "event_type": "transaction.completed",
             "data": {
-                "id": "txn_provision_test",
-                "custom_data": {"user_id": "test-user"},
-                "items": [{"price": {"id": "pri_test_123", "product_id": "pro_test"}}],
-                "subscription_id": "sub_test",
-                "customer_id": "ctm_test",
-            },
+                "type": "orders",
+                "id": "order_provision_test",
+                "attributes": {
+                    "status": "paid",
+                    "variant_id": 12345,
+                    "customer_id": 999,
+                    "meta": {
+                        "custom_data": {"user_id": "test-user"},
+                    },
+                },
+            }
         }
         body_bytes = json.dumps(body_dict).encode()
-        sig = self._sign(body_bytes, "test-paddle-secret")
+        sig = self._sign(body_bytes, "test-ls-secret")
         resp = await client.post(
-            "/v1/webhooks/paddle",
-            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            "/v1/webhooks/lemonsqueezy",
+            headers={
+                "X-Signature": sig,
+                "X-Event-Name": "order_created",
+                "Content-Type": "application/json",
+            },
             content=body_bytes,
         )
         assert resp.status_code == 200
@@ -346,27 +362,35 @@ class TestPaddleWebhook:
         plan = await redis.get("ipgeo:user:test-user:plan")
         assert plan == "pro"
 
-    async def test_webhook_canceled_stores_effective_at(self, client: AsyncClient):
+    async def test_webhook_cancelled_stores_ends_at(self, client: AsyncClient):
         body_dict = {
-            "event_type": "subscription.canceled",
             "data": {
+                "type": "subscriptions",
                 "id": "sub_cancel_test",
-                "custom_data": {"user_id": "cancel-user"},
-                "status": "active",
-                "scheduled_change": {"action": "cancel", "effective_at": "2026-07-14T00:00:00Z"},
-            },
+                "attributes": {
+                    "status": "cancelled",
+                    "ends_at": "2026-07-14T00:00:00Z",
+                    "customer_id": 999,
+                },
+            }
         }
         body_bytes = json.dumps(body_dict).encode()
-        sig = self._sign(body_bytes, "test-paddle-secret")
+        sig = self._sign(body_bytes, "test-ls-secret")
         resp = await client.post(
-            "/v1/webhooks/paddle",
-            headers={"Paddle-Signature": sig, "Content-Type": "application/json"},
+            "/v1/webhooks/lemonsqueezy",
+            headers={
+                "X-Signature": sig,
+                "X-Event-Name": "subscription_cancelled",
+                "Content-Type": "application/json",
+            },
             content=body_bytes,
         )
         assert resp.status_code == 200
 
         from app.redis_client import get_redis
         redis = get_redis()
+        # Need to have a user linked to the customer first
+        await redis.set("ipgeo:customer:999:user", "cancel-user")
         effective_at = await redis.get("ipgeo:user:cancel-user:cancel_effective_at")
         assert effective_at == "2026-07-14T00:00:00Z"
 

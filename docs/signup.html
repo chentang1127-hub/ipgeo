@@ -46,20 +46,20 @@
 
     <label>Plan</label>
     <div class="plan-options" id="plans">
-      <div class="plan-opt" data-plan="free" data-price-id="pri_01kv2fm7b7y2bwptwjeyq6gt36">
+      <div class="plan-opt" data-plan="free" data-variant-id="1794238">
         <div class="name">🎉 Free</div>
         <div class="price">$0/mo · 10K queries</div>
       </div>
-      <div class="plan-opt" data-plan="starter" data-price-id="pri_01kv2fsash4j8ed9m2swmbst7z">
+      <div class="plan-opt" data-plan="starter" data-variant-id="1794256">
         <div class="name">🚀 Starter</div>
         <div class="price">$9/mo · 100K queries</div>
       </div>
-      <div class="plan-opt selected" data-plan="pro" data-price-id="pri_01kv2fyaj4ek50cxrbw7f332eh">
+      <div class="plan-opt selected" data-plan="pro" data-variant-id="1794262">
         <div class="name">Pro 🎯</div>
         <div class="price">$29/mo · 500K queries</div>
         <div class="badge">GeoIP2</div>
       </div>
-      <div class="plan-opt" data-plan="business" data-price-id="pri_01kv2g0mdbeze07k2rqdcqykse">
+      <div class="plan-opt" data-plan="business" data-variant-id="1794265">
         <div class="name">💼 Business</div>
         <div class="price">$79/mo · 1M queries</div>
         <div class="badge">GeoIP2</div>
@@ -74,7 +74,7 @@
       <span class="btn-text">Continue to Payment</span>
     </button>
     <p style="text-align:center;color:var(--dim);font-size:.75rem;margin-top:16px;">
-      Payment handled securely by Paddle. 7-day money-back guarantee.
+      Payment handled securely by Lemon Squeezy. 7-day money-back guarantee.
     </p>
   </div>
 </div>
@@ -90,14 +90,14 @@ function _track(event, extra) {
 _track('page_view');
 
 let selectedPlan = 'pro';
-let selectedPriceId = 'pri_01kv2fyaj4ek50cxrbw7f332eh';
+let selectedVariantId = '1794262';
 
 document.querySelectorAll('.plan-opt').forEach(el => {
   el.addEventListener('click', () => {
     document.querySelectorAll('.plan-opt').forEach(e => e.classList.remove('selected'));
     el.classList.add('selected');
     selectedPlan = el.dataset.plan;
-    selectedPriceId = el.dataset.priceId;
+    selectedVariantId = el.dataset.variantId;
   });
 });
 
@@ -110,7 +110,7 @@ if (urlPlan) {
     document.querySelectorAll('.plan-opt').forEach(e => e.classList.remove('selected'));
     match.classList.add('selected');
     selectedPlan = match.dataset.plan;
-    selectedPriceId = match.dataset.priceId;
+    selectedVariantId = match.dataset.variantId;
   }
 }
 
@@ -140,7 +140,7 @@ async function handleSubmit() {
 
   try {
     if (selectedPlan === 'free') _track('signup_complete', {plan: 'free'});
-    // Free plan — skip Paddle, create key directly
+    // Free plan — skip checkout, create key directly
     if (selectedPlan === 'free') {
       const resp = await fetch('https://api.getipgeo.com/v1/auth/register-free', {
         method: 'POST',
@@ -159,18 +159,18 @@ async function handleSubmit() {
       return;
     }
 
-    // Paid plan — create Paddle checkout
+    // Paid plan — create Lemon Squeezy checkout
     const resp = await fetch('https://api.getipgeo.com/v1/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, price_id: selectedPriceId }),
+      body: JSON.stringify({ email, variant_id: selectedVariantId }),
     });
     if (!resp.ok) {
       const err = await resp.json();
       throw new Error(err.detail || 'Registration failed');
     }
     const data = await resp.json();
-    // Redirect to Paddle
+    // Redirect to Lemon Squeezy checkout
     window.location.href = data.checkout_url;
   } catch (e) {
     showError(e.message || 'Something went wrong. Please try again.');

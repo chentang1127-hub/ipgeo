@@ -77,7 +77,7 @@ rate_limit_hits_total = Counter(
 registrations_total = Counter(
     "ipgeo_registrations_total",
     "New user registrations",
-    ["plan", "method"],  # method = free | claim | paddle
+    ["plan", "method"],  # method = free | claim | lemonsqueezy
     registry=REGISTRY,
 )
 
@@ -147,7 +147,7 @@ def record_analytics_event(event: str, page: str = "/"):
 #   /docs /openapi.json       → /docs /openapi.json
 #   /v1/analytics/event       → /v1/analytics/event
 #   /v1/admin/keys            → /v1/admin/keys
-#   /v1/webhooks/paddle       → /v1/webhooks/paddle
+#   /v1/webhooks/lemonsqueezy → /v1/webhooks/lemonsqueezy
 #
 
 _V1_STATIC_PREFIXES = (

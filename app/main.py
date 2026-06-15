@@ -320,7 +320,7 @@ async def health():
 @app.post("/v1/auth/register-free")
 async def auth_register_free(request: Request):
     """
-    Register a free plan user directly (no Paddle checkout needed).
+    Register a free plan user directly (no checkout needed).
 
     Request body:
         { "email": "user@example.com" }
@@ -382,15 +382,15 @@ async def auth_claim_by_email(request: Request):
 @app.post("/v1/auth/register")
 async def auth_register(request: Request):
     """
-    Register a new user and get a Paddle checkout URL.
+    Register a new user and get a Lemon Squeezy checkout URL.
 
     Request body:
-        { "email": "user@example.com", "price_id": "pri_01kv2fyaj4ek50cxrbw7f332eh" }
+        { "email": "user@example.com", "variant_id": "123456" }
 
     Response:
-        { "user_id": "...", "checkout_url": "https://buy.paddle.com/..." }
+        { "user_id": "...", "checkout_url": "https://store.lemonsqueezy.com/..." }
 
-    Redirect the user to `checkout_url`. After payment, Paddle will
+    Redirect the user to ``checkout_url``. After payment, Lemon Squeezy will
     redirect them to /success?checkout_id=xxx where they can claim their key.
     """
     body = await request.json() or {}
@@ -399,15 +399,15 @@ async def auth_register(request: Request):
     if not email or "@" not in email:
         raise HTTPException(400, detail="Valid email is required")
 
-    price_id = (body.get("price_id") or "").strip()
-    if not price_id:
-        raise HTTPException(400, detail="price_id is required (plan selection)")
+    variant_id = (body.get("variant_id") or "").strip()
+    if not variant_id:
+        raise HTTPException(400, detail="variant_id is required (plan selection)")
 
-    # Validate price_id maps to a known plan
+    # Validate variant_id maps to a known plan
     settings = get_settings()
-    plan = settings.paddle_price_plan_map.get(price_id)
+    plan = settings.lemonsqueezy_variant_plan_map.get(variant_id)
     if not plan:
-        raise HTTPException(400, detail=f"Unknown price_id: {price_id}")
+        raise HTTPException(400, detail=f"Unknown variant_id: {variant_id}")
 
     # Check if user already exists by email
     existing_user_id = await auth.get_user_by_email(email)
@@ -419,14 +419,14 @@ async def auth_register(request: Request):
         user_id = uuid.uuid4().hex[:16]
         await auth.store_user_email(user_id, email)
 
-    # Create Paddle checkout
+    # Create Lemon Squeezy checkout
     checkout_data = await webhooks.create_checkout(
         user_id=user_id,
-        price_id=price_id,
+        variant_id=variant_id,
         customer_email=email,
     )
 
-    checkout_url = checkout_data.get("url") or checkout_data.get("checkout_url", "")
+    checkout_url = checkout_data.get("url", "")
     checkout_id = checkout_data.get("id", "")
 
     logger.info("Registration: user=%s email=%s plan=%s checkout=%s", user_id, email, plan, checkout_id)
@@ -442,7 +442,7 @@ async def auth_register(request: Request):
 @app.post("/v1/auth/claim")
 async def auth_claim(request: Request):
     """
-    Claim an API key after completing Paddle checkout.
+    Claim an API key after completing Lemon Squeezy checkout.
 
     Request body:
         { "checkout_id": "..." }
@@ -468,21 +468,22 @@ async def auth_claim(request: Request):
         logger.info("Claim: checkout=%s already claimed, returning cached key", checkout_id)
         return {"api_key": api_key, "plan": plan, "user_id": user_id}
 
-    # 1. Verify checkout with Paddle
+    # 1. Verify checkout with Lemon Squeezy
     checkout_info = await webhooks.verify_checkout(checkout_id)
     if checkout_info is None:
         raise HTTPException(400, detail="Checkout not found. It may take a moment — please retry.")
 
-    if checkout_info.get("status") != "completed":
+    status = checkout_info.get("status", "")
+    if status not in ("paid", "completed"):
         raise HTTPException(
             425,  # Too Early
-            detail=f"Payment not yet completed (status: {checkout_info['status']}). "
+            detail=f"Payment not yet completed (status: {status}). "
                    "Please retry after the payment processes.",
         )
 
     user_id = checkout_info.get("user_id", "")
-    paddle_price_id = checkout_info.get("price_id", "")
-    plan = settings.paddle_price_plan_map.get(paddle_price_id, "free")
+    variant_id = checkout_info.get("variant_id", "")
+    plan = settings.lemonsqueezy_variant_plan_map.get(variant_id, "free")
 
     if not user_id:
         raise HTTPException(400, detail="Could not identify user from checkout. Please contact support.")
@@ -675,30 +676,32 @@ async def metrics():
 
 
 # ---------------------------------------------------------------------------
-# Paddle webhook
+# Lemon Squeezy webhook
 # ---------------------------------------------------------------------------
 
 
-@app.post("/v1/webhooks/paddle")
-async def paddle_webhook(request: Request):
+@app.post("/v1/webhooks/lemonsqueezy")
+async def lemonsqueezy_webhook(request: Request):
     """
-    Paddle billing webhook receiver.  Paddle POSTs events here for
-    subscription lifecycle: activation, cancellation, renewals, payments.
+    Lemon Squeezy billing webhook receiver.  LS POSTs events here for
+    order and subscription lifecycle: order_created, subscription_updated, etc.
 
-    Verify the HMAC-SHA256 signature before processing.
+    Verify the HMAC-SHA256 signature (``X-Signature`` header) before processing.
+    Event type is in the ``X-Event-Name`` header.
     """
     from .config import get_settings
 
     settings = get_settings()
     raw_body = await request.body()
-    signature = request.headers.get("Paddle-Signature", "")
+    signature = request.headers.get("X-Signature", "")
 
-    if not webhooks.verify_signature(raw_body, signature, settings.paddle_webhook_secret):
+    if not webhooks.verify_signature(raw_body, signature, settings.lemonsqueezy_webhook_secret):
         raise HTTPException(401, detail="Invalid webhook signature")
 
     body = await request.json()
-    event_type = body.get("event_type", "")
-    event_data = body.get("data", {})
+    event_type = request.headers.get("X-Event-Name", "")
+    # LS webhook body is the full resource object wrapped in {data: {...}}
+    event_data = body.get("data", body)
 
     await webhooks.handle_event(event_type, event_data)
     return {"ok": True}

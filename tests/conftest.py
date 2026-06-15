@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 # Ensure we don't accidentally hit real Redis
 os.environ["IPGEO_ENVIRONMENT"] = "test"
 os.environ["IPGEO_ADMIN_TOKEN"] = "test-admin-secret"
-os.environ["IPGEO_PADDLE_WEBHOOK_SECRET"] = "test-paddle-secret"
+os.environ["IPGEO_LEMONSQUEEZY_WEBHOOK_SECRET"] = "test-ls-secret"
 os.environ["IPGEO_CITY_DB_PATH"] = str(PROJECT_ROOT / "data" / "GeoLite2-City.mmdb")
 os.environ["IPGEO_ASN_DB_PATH"] = str(PROJECT_ROOT / "data" / "GeoLite2-ASN.mmdb")
 
