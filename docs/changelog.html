@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog — IPGeo API Updates</title>
+  <meta name="description" content="IPGeo API changelog. Track every update, new feature, and improvement to the IPGeo geolocation API.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    nav a:hover { color: var(--text); }
+
+    h1 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .subtitle { color: var(--dim); margin-bottom: 48px; }
+
+    .entry { position: relative; padding: 0 0 40px 32px; border-left: 1px solid var(--border); }
+    .entry:last-child { border-left-color: transparent; }
+    .entry .dot { position: absolute; left: -5px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .entry .date { color: var(--dim2); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+    .entry h3 { color: #fff; font-size: 1.05rem; margin-bottom: 8px; }
+    .entry p { color: var(--dim); font-size: .9rem; }
+    .entry .tag { display: inline-block; font-size: .65rem; padding: 2px 8px; border-radius: 4px; margin-right: 6px; font-weight: 600; }
+    .tag.feature { background: #064e3b; color: var(--green); }
+    .tag.improve { background: #1e3a5f; color: #60a5fa; }
+    .tag.fix { background: #3b1e0a; color: #f59e0b; }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; }
+    footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<nav class="container">
+  <a href="/" class="logo">IP<span>Geo</span></a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<div class="container">
+  <h1>Changelog</h1>
+  <p class="subtitle">Every update to the IPGeo API, documented.</p>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 15, 2026</div>
+    <h3><span class="tag feature">Feature</span> Risk Detection</h3>
+    <p>Added <code>risk_flags</code> field to all lookup responses. Detects Tor exit nodes via the public Tor exit list (refreshed hourly) and hosting/datacenter IPs via 21 known provider ASNs. Zero-cost, zero-external-API-dependency. When no risk signals are detected, the field is omitted entirely.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 15, 2026</div>
+    <h3><span class="tag feature">Feature</span> Free Tools: IP Lookup, My IP, ASN Lookup</h3>
+    <p>Launched three free web-based tools — IP geolocation search, automatic IP detection, and ASN/ISP lookup. All powered by the same MaxMind data as the API. No signup required for the web tools.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 14, 2026</div>
+    <h3><span class="tag feature">Feature</span> Public Stats & Changelog</h3>
+    <p>Added <code>/v1/stats</code> public endpoint and <code>/public-stats</code> page showing total lookups served, uptime, and cache performance. Launched this changelog for transparent product updates.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 14, 2026</div>
+    <h3><span class="tag improve">Improve</span> Positioning & Landing Page</h3>
+    <p>Rewrote home page hero to focus on "Fortune-500 accuracy, startup-friendly prices." Replaced weak social proof with concrete trust signals: MaxMind GeoIP2, OpenAPI 3.1, Cloudflare CDN. Added comparison pages for MaxMind and IPinfo.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 13, 2026</div>
+    <h3><span class="tag feature">Feature</span> GeoLite2 → GeoIP2 Upgrade Path</h3>
+    <p>Pro, Business, and Enterprise plans now use paid MaxMind GeoIP2 databases (95%+ city fill rate) when available, with automatic fallback to GeoLite2. Free and Starter plans remain on GeoLite2.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 12, 2026</div>
+    <h3><span class="tag improve">Improve</span> Pro Plan Quota Increase</h3>
+    <p>Increased Pro plan monthly quota from 250,000 to 500,000 lookups. Price remains $29/mo. Added 7-day money-back guarantee to all paid plans.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 10, 2026</div>
+    <h3><span class="tag feature">Feature</span> Batch Lookup Endpoint</h3>
+    <p>Added <code>POST /v1/ip/batch</code> — look up up to 100 IPs in a single request. Parallel mmap reads via thread pool executor.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 8, 2026</div>
+    <h3><span class="tag feature">Feature</span> Paddle Billing Integration</h3>
+    <p>Integrated Paddle as merchant-of-record for paid plans. Automatic plan provisioning via webhooks. Free plan stays direct-registration with no checkout required.</p>
+  </div>
+
+  <div class="entry">
+    <div class="dot"></div>
+    <div class="date">June 5, 2026</div>
+    <h3><span class="tag feature">Feature</span> Public Beta Launch</h3>
+    <p>IPGeo launched with MaxMind GeoLite2 data, mmap-backed lookups, Redis billing, and Docker Compose deployment. Free tier: 10,000 queries/month.</p>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/changelog">Changelog</a> · <a href="/public-stats">Public Stats</a> · <a href="https://api.getipgeo.com/docs">API Docs</a></p>
+</footer>
+
+</body>
+</html>

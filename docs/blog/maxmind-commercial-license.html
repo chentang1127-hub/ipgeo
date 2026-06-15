@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaxMind Commercial License Explained — What You Actually Need (2026) | IPGeo</title>
+  <meta name="description" content="Do you need a MaxMind commercial license? GeoLite2 vs GeoIP2, free vs paid, SaaS usage, redistribution rules explained. A practical guide for developers.">
+  <meta name="keywords" content="MaxMind commercial license, MaxMind GeoLite2 license, GeoIP2 commercial, MaxMind SaaS, MaxMind redistribution">
+  <meta property="og:title" content="MaxMind Commercial License — What Developers Actually Need (2026)">
+  <meta property="og:description" content="GeoLite2 vs GeoIP2 licensing explained. When you need a commercial license, when you don't, and how to avoid the headache entirely.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; --red: #ef4444; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.85; }
+    article { max-width: 720px; margin: 0 auto; padding: 60px 24px; }
+    h1 { font-size: 2.2rem; color: #fff; line-height: 1.3; margin-bottom: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    h2 { font-size: 1.4rem; color: #fff; margin: 48px 0 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    h3 { font-size: 1.1rem; color: #fff; margin: 32px 0 12px; }
+    p { color: var(--dim); margin-bottom: 16px; }
+    .meta { color: var(--dim); font-size: .85rem; margin-bottom: 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .meta span { color: var(--accent); }
+    .callout { background: var(--card); border-left: 3px solid var(--accent); padding: 20px 24px; margin: 32px 0; border-radius: 0 8px 8px 0; }
+    .callout p { margin: 0; }
+    .callout.warn { border-left-color: var(--red); }
+    table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: .9rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    th { text-align: left; color: #fff; padding: 10px 12px; border-bottom: 2px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--dim); }
+    td strong { color: var(--text); }
+    .check { color: var(--green); }
+    .cross { color: var(--red); }
+    pre { background: #0d0d14; border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: .8rem; margin: 16px 0; }
+    code { font-family: 'Fira Code', monospace; font-size: .85em; }
+    ul, ol { color: var(--dim); margin: 0 0 24px 24px; }
+    li { margin-bottom: 8px; }
+    footer { text-align: center; color: var(--dim); font-size: .8rem; padding: 60px 0; border-top: 1px solid var(--border); margin-top: 60px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<article>
+  <h1>MaxMind Commercial License Explained — What Developers Actually Need (2026)</h1>
+  <p class="meta">By <span>IPGeo Team</span> · June 15, 2026 · 6 min read</p>
+
+  <p>If you've ever searched "MaxMind GeoLite2 commercial use" at 2 AM while deploying, you're not alone. MaxMind's licensing is the #1 source of confusion for developers integrating IP geolocation. This guide breaks down exactly what you need — and what you don't.</p>
+
+  <h2>TL;DR: The Two-Minute Version</h2>
+  <table>
+    <tr><th>Use Case</th><th>GeoLite2 (Free)</th><th>GeoIP2 (Paid)</th></tr>
+    <tr><td>Internal analytics on your server</td><td><span class="check">✓</span> OK (CC BY-SA 4.0)</td><td><span class="check">✓</span> Requires paid license</td></tr>
+    <tr><td>SaaS product serving paying customers</td><td><span class="cross">✕</span> Attribution + share-alike issues</td><td><span class="check">✓</span> With commercial license</td></tr>
+    <tr><td>Redistributing as an API</td><td><span class="cross">✕</span> Not allowed</td><td><span class="check">✓</span> Requires redistribution license</td></tr>
+    <tr><td>Mobile app (data embedded)</td><td><span class="cross">✕</span> Attribution requirement problematic</td><td><span class="check">✓</span> With commercial license</td></tr>
+    <tr><td>Personal project (no revenue)</td><td><span class="check">✓</span> OK</td><td>Overkill</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <p><strong>I am not a lawyer.</strong> This article reflects community understanding and practical experience. MaxMind's terms change. Read the actual license at maxmind.com before making business decisions.</p>
+  </div>
+
+  <h2>GeoLite2: Free, But Not "Free"</h2>
+  <p>GeoLite2 is MaxMind's free database tier. It's distributed under the <strong>Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)</strong> license — and that "ShareAlike" clause is where most developers get tripped up.</p>
+
+  <h3>What CC BY-SA 4.0 Means in Practice</h3>
+  <ol>
+    <li><strong>Attribution:</strong> You must give credit to MaxMind wherever the data is used. For a website footer, that's manageable. For an API response or a mobile app, it's awkward at best.</li>
+    <li><strong>ShareAlike:</strong> If you modify or build upon the data, your derivative work must also be licensed under CC BY-SA. This is the real problem — if you embed GeoLite2 in a SaaS product, does your entire product become CC BY-SA? The answer is unclear, and that ambiguity is exactly what lawyers advise against.</li>
+    <li><strong>No sublicensing:</strong> You can't grant your users rights to the GeoLite2 data. If a customer queries your API that uses GeoLite2, they don't have a license to MaxMind's data — and that creates legal exposure.</li>
+  </ol>
+
+  <div class="callout">
+    <p><strong>Bottom line:</strong> GeoLite2 is perfect for prototypes, internal tools, and non-commercial projects. Once money is involved — or once a lawyer reviews your stack — the attribution and share-alike requirements become dealbreakers.</p>
+  </div>
+
+  <h2>GeoIP2: Pay for Certainty</h2>
+  <p>GeoIP2 is MaxMind's commercial database. It has two things GeoLite2 doesn't:</p>
+  <ul>
+    <li><strong>95%+ city accuracy</strong> vs ~37% with GeoLite2</li>
+    <li><strong>A clear commercial license</strong> that explicitly permits SaaS, API, and redistribution use</li>
+  </ul>
+
+  <h3>GeoIP2 Pricing (2026)</h3>
+  <table>
+    <tr><th>Tier</th><th>Monthly Cost</th><th>Includes</th></tr>
+    <tr><td><strong>GeoIP2 City</strong> (web service)</td><td>$50/mo</td><td>Unlimited queries, commercial use</td></tr>
+    <tr><td><strong>GeoIP2 City</strong> (database download)</td><td>Starts ~$300/yr</td><td>Self-hosted, weekly updates</td></tr>
+    <tr><td><strong>GeoIP2 + minFraud</strong></td><td>Custom</td><td>Fraud scoring, proxy detection</td></tr>
+  </table>
+  <p>Note: The $50/mo web service is a great deal at scale — flat rate, unlimited queries. But it still requires you to integrate MaxMind's client libraries and manage the connection.</p>
+
+  <h2>The Hidden Cost Nobody Talks About</h2>
+  <p>Even with a GeoIP2 license, you're signing up for operational work:</p>
+  <ul>
+    <li><strong>Database downloads:</strong> The City database is 50+ GB. You need a server with sufficient disk space, a download script, and a cron job.</li>
+    <li><strong>Update pipeline:</strong> Updates arrive weekly (or daily for some editions). You need mmap reload logic so lookups don't fail mid-update.</li>
+    <li><strong>API wrapper:</strong> The database is a file. You need to build a REST or gRPC wrapper around it — authentication, rate limiting, monitoring.</li>
+    <li><strong>Multiple environments:</strong> Repeat everything for staging, production, and any failover regions.</li>
+  </ul>
+  <p>For a team with dedicated infrastructure engineers, this is a week of work. For an indie developer or small startup, it's a permanent maintenance burden that distracts from building the actual product.</p>
+
+  <h2>Three Ways to Use MaxMind Data — Ranked by Complexity</h2>
+
+  <h3>1. MaxMind Direct — Full Control, Full Responsibility</h3>
+  <ul>
+    <li><span class="cross">✕</span> Apply for license. Wait for approval.</li>
+    <li><span class="cross">✕</span> Provision servers. Download 50 GB databases.</li>
+    <li><span class="cross">✕</span> Build API wrapper. Set up update pipeline.</li>
+    <li><span class="cross">✕</span> Maintain forever.</li>
+    <li>Best for: Enterprises with infra teams, 500K+ queries/day</li>
+  </ul>
+
+  <h3>2. MaxMind Web Service — Less Ops, Same License</h3>
+  <ul>
+    <li><span class="check">✓</span> No database download.</li>
+    <li><span class="cross">✕</span> Still need commercial license.</li>
+    <li><span class="cross">✕</span> Client library integration required.</li>
+    <li><span class="cross">✕</span> Network latency to MaxMind servers.</li>
+    <li>Best for: Teams that want MaxMind data without the database ops</li>
+  </ul>
+
+  <h3>3. IPGeo API — Zero License, Zero Ops</h3>
+  <ul>
+    <li><span class="check">✓</span> Commercial license included in subscription.</li>
+    <li><span class="check">✓</span> No database downloads. No update pipeline.</li>
+    <li><span class="check">✓</span> One X-API-Key header. One curl command.</li>
+    <li><span class="check">✓</span> Sub-millisecond mmap lookups (local DB, no network hop).</li>
+    <li>Best for: Developers who want MaxMind-grade accuracy without thinking about MaxMind</li>
+  </ul>
+
+  <h2>FAQ: MaxMind Licensing Questions Developers Actually Ask</h2>
+
+  <h3>"Can I use GeoLite2 in my SaaS if I add attribution?"</h3>
+  <p>Technically yes, but the ShareAlike clause means your derivative work must also be CC BY-SA licensed. Most SaaS companies are unwilling to open-source their entire product just to use a free IP database. This is why nearly every commercial IP geolocation product uses GeoIP2, not GeoLite2.</p>
+
+  <h3>"What counts as 'redistribution' of MaxMind data?"</h3>
+  <p>If a third party (your customer, your API user, your app's end user) receives MaxMind data through your product, that's redistribution. Internal analytics dashboards that only your team sees are not redistribution. A public API that returns city-level geolocation to paying customers is.</p>
+
+  <h3>"Do I need a license if I use a third-party API that uses MaxMind?"</h3>
+  <p>No. If you use an API like IPGeo or ipinfo, the API provider holds the MaxMind license. You're consuming a service, not the database directly. This is exactly why API-based IP geolocation exists — it abstracts away the licensing complexity.</p>
+
+  <h3>"What happens if I violate MaxMind's license?"</h3>
+  <p>MaxMind's terms allow them to terminate your license and pursue legal remedies. In practice, they typically start with a compliance notice. But if your product depends on IP geolocation, having your data source cut off is an existential risk — one that's not worth taking over a $29/mo API subscription.</p>
+
+  <h2>The Practical Takeaway</h2>
+  <p>MaxMind makes excellent data. Their licensing is reasonable once you understand it, but the barrier to entry — legal review, infrastructure setup, ongoing maintenance — is real.</p>
+
+  <table>
+    <tr><th>You should…</th><th>If…</th></tr>
+    <tr><td><strong>Get a MaxMind commercial license</strong></td><td>You have a legal team, an infra team, and need direct database access for compliance or latency reasons.</td></tr>
+    <tr><td><strong>Use a MaxMind-powered API</strong></td><td>You want MaxMind-quality data without the licensing and ops overhead. Pay a small premium per query, save weeks of engineering time.</td></tr>
+    <tr><td><strong>Use GeoLite2 (free)</strong></td><td>You're prototyping, building an internal tool, or running a non-commercial project where the CC BY-SA terms are acceptable.</td></tr>
+  </table>
+
+  <p style="margin-top:40px;">
+    <a href="/signup?plan=free" style="color:var(--accent);font-weight:600;font-size:1.05rem;">Get MaxMind-quality data through IPGeo — no license required →</a>
+  </p>
+</article>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/blog/maxmind-commercial-license">MaxMind License Guide</a> · <a href="/public-stats">Public Stats</a> · <a href="/changelog">Changelog</a></p>
+</footer>
+
+</body>
+</html>

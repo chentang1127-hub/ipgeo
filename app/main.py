@@ -58,6 +58,14 @@ async def lifespan(app: FastAPI):
     await init_redis()
     geo = GeoReader()
     risk.init_risk()
+
+    # Persist server start time for uptime display (public stats)
+    try:
+        redis = get_redis()
+        await redis.set("ipgeo:stats:started_at", str(time.time()))
+    except Exception:
+        pass
+
     logger.info("IPGeo v%s started (env=%s)", app.version, settings.environment)
 
     yield
@@ -128,6 +136,7 @@ async def lookup_my_ip(
     with m.record_lookup_duration("me"):
         result = geo.lookup(client_ip, plan)
     m.record_lookup("me", plan, "ok")
+    await _incr_total()
     return result
 
 
@@ -178,6 +187,7 @@ async def lookup_ip(
         result = {k: v for k, v in result.items() if k in field_set}
 
     m.record_lookup("lookup", plan, "ok")
+    await _incr_total()
     return result
 
 
@@ -233,6 +243,7 @@ async def batch_lookup(
     m.lookup_duration_seconds.labels(endpoint="batch").observe(time.perf_counter() - t0)
 
     m.record_lookup("batch", plan, "ok", count)
+    await _incr_total(count)
     return {"results": results}
 
 
@@ -527,6 +538,50 @@ async def admin_revoke_key(request: Request):
         raise HTTPException(400, detail="Missing api_key")
     deleted = await auth.revoke(api_key)
     return {"revoked": deleted}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+async def _incr_total(count: int = 1) -> None:
+    """Increment the global lookup counter (best-effort)."""
+    try:
+        redis = get_redis()
+        await redis.incrby("ipgeo:stats:total_lookups", count)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# Public stats (no auth required)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/v1/stats")
+async def public_stats():
+    """
+    Public usage statistics — no auth required.
+    Intended for the /public-stats transparency page.
+    """
+    try:
+        redis = get_redis()
+        total = int(await redis.get("ipgeo:stats:total_lookups") or "0")
+        started = float(await redis.get("ipgeo:stats:started_at") or "0")
+    except Exception:
+        total = 0
+        started = 0.0
+
+    uptime_sec = max(0, time.time() - started)
+    return {
+        "total_lookups_served": total,
+        "uptime_seconds": int(uptime_sec),
+        "uptime_days": round(uptime_sec / 86400, 1),
+        "version": app.version,
+        "db_loaded": geo.loaded if geo else False,
+        "cache": geo.stats if geo else {},
+    }
 
 
 @app.get("/metrics")

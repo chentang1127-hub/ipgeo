@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Public Stats — IPGeo API Usage & Uptime</title>
+  <meta name="description" content="Live API usage statistics and uptime for IPGeo. Total lookups served, uptime history, and cache performance. Transparency you can trust.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    nav a:hover { color: var(--text); }
+
+    h1 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .subtitle { color: var(--dim); margin-bottom: 40px; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 28px 24px; text-align: center; }
+    .stat-card .number { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .stat-card .number.small { font-size: 1.5rem; }
+    .stat-card .label { color: var(--dim); font-size: .82rem; }
+    .stat-card.loading .number { color: var(--dim); font-size: 1.2rem; }
+    .stat-card.info { text-align: left; display: flex; flex-direction: column; justify-content: center; }
+    .stat-card.info .line { color: var(--dim); font-size: .85rem; padding: 4px 0; }
+    .stat-card.info .line strong { color: var(--text); }
+    .stat-card .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .status-dot.ok { background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .cta-inline { background: linear-gradient(135deg, #1a1025, #0f0f1f); border: 1px solid var(--accent); border-radius: 10px; padding: 28px; margin: 40px 0; text-align: center; }
+    .cta-inline p { color: var(--dim); font-size: .9rem; margin-bottom: 12px; }
+    .btn { display: inline-block; padding: 12px 28px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; font-size: .9rem; text-decoration: none; }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; }
+    footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="container">
+  <a href="/" class="logo">IP<span>Geo</span></a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<div class="container">
+  <h1>Public Stats</h1>
+  <p class="subtitle">Live API usage and uptime. No hidden numbers — see exactly what our infrastructure handles.</p>
+
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card loading"><div class="number">—</div><div class="label">Total Lookups Served</div></div>
+    <div class="stat-card loading"><div class="number">—</div><div class="label">Uptime</div></div>
+    <div class="stat-card loading"><div class="number">—</div><div class="label">Cache Hit Rate</div></div>
+    <div class="stat-card loading"><div class="number">—</div><div class="label">Database Status</div></div>
+  </div>
+
+  <div class="cta-inline">
+    <p><strong>Like what you see?</strong> Get 10,000 free lookups every month.</p>
+    <a href="/signup?plan=free" class="btn">Get Free API Key →</a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/pricing">Pricing</a> · <a href="/public-stats">Public Stats</a> · <a href="/changelog">Changelog</a></p>
+</footer>
+
+<script>
+var API = 'https://api.getipgeo.com/v1/stats';
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+function uptimeStr(sec) {
+  if (sec < 3600) return Math.floor(sec/60) + 'm';
+  if (sec < 86400) return Math.floor(sec/3600) + 'h ' + Math.floor((sec%3600)/60) + 'm';
+  return Math.floor(sec/86400) + 'd ' + Math.floor((sec%86400)/3600) + 'h';
+}
+
+async function load() {
+  try {
+    var resp = await fetch(API);
+    var d = await resp.json();
+    var html = '';
+
+    html += '<div class="stat-card"><div class="number">' + fmt(d.total_lookups_served) + '</div><div class="label">Total Lookups Served</div></div>';
+    html += '<div class="stat-card"><div class="number small">' + uptimeStr(d.uptime_seconds) + '</div><div class="label">Uptime Since Last Deploy</div></div>';
+
+    var hit = d.cache && d.cache.cache_hit_rate_pct != null ? d.cache.cache_hit_rate_pct : 0;
+    html += '<div class="stat-card"><div class="number small">' + hit + '%</div><div class="label">Cache Hit Rate</div></div>';
+
+    var dbOk = d.db_loaded;
+    html += '<div class="stat-card info"><div class="line"><span class="status-dot ' + (dbOk ? 'ok' : '') + '"></span><strong>' + (dbOk ? 'Online' : 'Degraded') + '</strong></div><div class="line">Version ' + d.version + '</div><div class="line">Cache entries: ' + (d.cache ? d.cache.cache_size : 0) + '</div></div>';
+
+    document.getElementById('stats-grid').innerHTML = html;
+  } catch(e) {
+    document.getElementById('stats-grid').innerHTML = '<div class="stat-card loading" style="grid-column:1/-1;"><div class="number">—</div><div class="label">Stats temporarily unavailable</div></div>';
+  }
+}
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>
