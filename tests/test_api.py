@@ -24,9 +24,9 @@ class TestHealth:
         resp = await client.get("/v1/health")
         assert resp.status_code == 200
         body = resp.json()
-        assert body["status"] == "ok"
+        assert body["status"] == "healthy"
         assert body["version"] == "0.1.0"
-        assert body["db_loaded"] is True
+        assert body["components"]["database"]["status"] == "operational"
 
     async def test_health_no_auth_required(self, client: AsyncClient):
         """Health endpoint should work without any headers."""
@@ -363,6 +363,11 @@ class TestLemonSqueezyWebhook:
         assert plan == "pro"
 
     async def test_webhook_cancelled_stores_ends_at(self, client: AsyncClient):
+        # Set up customer→user mapping BEFORE the webhook arrives
+        from app.redis_client import get_redis
+        redis = get_redis()
+        await redis.set("ipgeo:customer:999:user", "cancel-user")
+
         body_dict = {
             "data": {
                 "type": "subscriptions",
@@ -387,10 +392,6 @@ class TestLemonSqueezyWebhook:
         )
         assert resp.status_code == 200
 
-        from app.redis_client import get_redis
-        redis = get_redis()
-        # Need to have a user linked to the customer first
-        await redis.set("ipgeo:customer:999:user", "cancel-user")
         effective_at = await redis.get("ipgeo:user:cancel-user:cancel_effective_at")
         assert effective_at == "2026-07-14T00:00:00Z"
 
