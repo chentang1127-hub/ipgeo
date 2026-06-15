@@ -86,6 +86,7 @@ _track('page_view');
 
 async function main() {
   const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
   const checkoutId = params.get('checkout_id');
   const keyReady = params.get('key_ready');
 
@@ -101,11 +102,13 @@ async function main() {
     }
   }
 
-  if (!checkoutId) {
-    // No checkout_id — show email claim fallback
+  if (!token && !checkoutId) {
     showEmailFallback();
     return;
   }
+
+  // Build claim request — token preferred
+  const claimBody = token ? { token: token } : { checkout_id: checkoutId };
 
   // Poll the claim endpoint (payment may take a moment to process)
   let attempts = 0;
@@ -117,7 +120,7 @@ async function main() {
       const resp = await fetch('https://api.getipgeo.com/v1/auth/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkout_id: checkoutId }),
+        body: JSON.stringify(claimBody),
       });
 
       if (resp.ok) {

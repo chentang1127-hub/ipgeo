@@ -10,6 +10,7 @@ Endpoints:
 """
 
 import ipaddress
+import json
 import logging
 import time
 import uuid
@@ -391,7 +392,7 @@ async def auth_register(request: Request):
         { "user_id": "...", "checkout_url": "https://store.lemonsqueezy.com/..." }
 
     Redirect the user to ``checkout_url``. After payment, Lemon Squeezy will
-    redirect them to /success?checkout_id=xxx where they can claim their key.
+    redirect them to /success?token=xxx where they can claim their key.
     """
     body = await request.json() or {}
 
@@ -419,23 +420,37 @@ async def auth_register(request: Request):
         user_id = uuid.uuid4().hex[:16]
         await auth.store_user_email(user_id, email)
 
+    # Pre-generate claim token (LS doesn't replace template variables in redirect_url)
+    claim_token = uuid.uuid4().hex
+    redis = get_redis()
+    await redis.setex(
+        f"ipgeo:claim:{claim_token}",
+        86400,  # 24h TTL
+        json.dumps({"user_id": user_id, "plan": plan}),
+    )
+
     # Create Lemon Squeezy checkout
     checkout_data = await webhooks.create_checkout(
         user_id=user_id,
         variant_id=variant_id,
         customer_email=email,
+        claim_token=claim_token,
     )
 
     checkout_url = checkout_data.get("url", "")
     checkout_id = checkout_data.get("id", "")
 
-    logger.info("Registration: user=%s email=%s plan=%s checkout=%s", user_id, email, plan, checkout_id)
+    # Map checkout_id → claim_token for webhook lookup fallback
+    await redis.setex(f"ipgeo:checkout:{checkout_id}", 86400, json.dumps({"user_id": user_id, "claim_token": claim_token}))
+
+    logger.info("Registration: user=%s email=%s plan=%s checkout=%s token=%s", user_id, email, plan, checkout_id, claim_token)
 
     return {
         "user_id": user_id,
         "checkout_url": checkout_url,
         "checkout_id": checkout_id,
         "plan": plan,
+        "claim_token": claim_token,
     }
 
 
@@ -444,24 +459,56 @@ async def auth_claim(request: Request):
     """
     Claim an API key after completing Lemon Squeezy checkout.
 
-    Request body:
+    Request body (token preferred):
+        { "token": "claim-token-from-redirect-url" }
+
+    Or (backward compat):
         { "checkout_id": "..." }
 
     Response:
         { "api_key": "ipgeo_...", "plan": "pro", "user_id": "..." }
 
-    Idempotent: repeat calls with the same checkout_id return the SAME key.
+    Idempotent: repeat calls return the SAME key.
     """
     body = await request.json() or {}
+    token = (body.get("token") or "").strip()
     checkout_id = (body.get("checkout_id") or "").strip()
-
-    if not checkout_id:
-        raise HTTPException(400, detail="checkout_id is required")
 
     settings = get_settings()
     redis = get_redis()
 
-    # 0. Idempotency check — already claimed this checkout?
+    # ── Token-based claim (primary path) ──
+    if token:
+        claim_data_raw = await redis.get(f"ipgeo:claim:{token}")
+        if not claim_data_raw:
+            raise HTTPException(400, detail="Claim token expired or invalid. Please contact support.")
+
+        claim_data = json.loads(claim_data_raw)
+        user_id = claim_data.get("user_id", "")
+        plan = claim_data.get("plan", "free")
+
+        # Idempotency: already claimed?
+        cached = await redis.get(f"ipgeo:claimed:{token}")
+        if cached:
+            api_key, cached_plan, cached_user = cached.split("|", 2)
+            return {"api_key": api_key, "plan": cached_plan, "user_id": cached_user}
+
+        # Provision user if webhook hasn't already
+        existing_plan = await redis.get(f"ipgeo:user:{user_id}:plan")
+        if not existing_plan:
+            await billing.set_plan(user_id, plan)
+            logger.info("Claim: user=%s provisioned as plan=%s (via token)", user_id, plan)
+
+        api_key = await auth.create(user_id, plan)
+        await redis.setex(f"ipgeo:claimed:{token}", 86400, f"{api_key}|{plan}|{user_id}")
+        logger.info("Claim: token=%s user=%s plan=%s", token, user_id, plan)
+        return {"api_key": api_key, "plan": plan, "user_id": user_id}
+
+    # ── Checkout_id based claim (backward compat / fallback) ──
+    if not checkout_id:
+        raise HTTPException(400, detail="token or checkout_id is required")
+
+    # 0. Idempotency check
     cached = await redis.get(f"ipgeo:claim:{checkout_id}")
     if cached:
         api_key, plan, user_id = cached.split("|", 2)
@@ -494,7 +541,6 @@ async def auth_claim(request: Request):
         logger.info("Claim: user=%s already provisioned as %s", user_id, existing_plan)
     else:
         await billing.set_plan(user_id, plan)
-        # Also store email from checkout
         email = checkout_info.get("email", "")
         if email:
             await auth.store_user_email(user_id, email)
@@ -700,10 +746,11 @@ async def lemonsqueezy_webhook(request: Request):
 
     body = await request.json()
     event_type = request.headers.get("X-Event-Name", "")
-    # LS webhook body is the full resource object wrapped in {data: {...}}
+    # LS webhook body: {data: {...}, meta: {custom_data: {...}}}
     event_data = body.get("data", body)
+    event_meta = body.get("meta", {})
 
-    await webhooks.handle_event(event_type, event_data)
+    await webhooks.handle_event(event_type, event_data, event_meta)
     return {"ok": True}
 
 

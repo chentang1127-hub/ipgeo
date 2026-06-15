@@ -45,13 +45,15 @@ def verify_signature(raw_body: bytes, signature: str, secret: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-async def handle_event(event_type: str, data: dict) -> None:
+async def handle_event(event_type: str, data: dict, meta: dict = None) -> None:
     """Dispatch a Lemon Squeezy webhook event to the appropriate handler."""
     logger.info("Lemon Squeezy webhook: %s (id=%s)", event_type, data.get("id", "?"))
 
-    # Extract custom_data from top-level meta (LS sends it alongside the resource)
-    # The webhook payload is the resource object; custom_data is nested inside
-    # `data.attributes` for some events.
+    # LS webhook payload: {data: {...}, meta: {custom_data: {...}}}
+    # custom_data is in the top-level meta, not nested inside data.attributes
+    if meta is None:
+        meta = {}
+
     handlers = {
         "order_created": _handle_order_created,
         "subscription_created": _handle_subscription_created,
@@ -64,7 +66,7 @@ async def handle_event(event_type: str, data: dict) -> None:
 
     handler = handlers.get(event_type)
     if handler:
-        await handler(data)
+        await handler(data, meta)
     else:
         logger.debug("Unhandled LS event: %s", event_type)
 
@@ -74,34 +76,40 @@ async def handle_event(event_type: str, data: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def _handle_order_created(data: dict) -> None:
+async def _handle_order_created(data: dict, meta: dict = None) -> None:
     """
     A new order was placed — this is the primary event for provisioning.
 
-    LS sends the full order object.  ``custom_data`` is in
-    ``data.attributes.meta.custom_data`` (for orders created via API checkout)
-    or ``data.attributes.custom_data`` (for older integrations).
+    LS webhook sends custom_data in the top-level ``meta`` object:
+    ``{data: {attributes: {...}}, meta: {custom_data: {user_id: ...}}}``
 
     We extract ``user_id``, provision the plan, and create an API key so the
     user can claim it immediately on the success page.
     """
+    if meta is None:
+        meta = {}
     attrs = data.get("attributes") or {}
-    meta = attrs.get("meta") or {}
+
+    # custom_data is in top-level meta (LS JSON:API webhook format)
     custom = meta.get("custom_data") or attrs.get("custom_data") or {}
+    # Also try nested: attrs.meta.custom_data (older format)
+    nested_meta = attrs.get("meta") or {}
+    if not custom:
+        custom = nested_meta.get("custom_data") or {}
     user_id = custom.get("user_id") or ""
 
     if not user_id:
-        # Fall back to looking up by checkout
         logger.warning("order_created without custom_data.user_id — trying checkout lookup")
         return
 
     await _provision_user(user_id, attrs, data.get("id", ""))
 
 
-async def _handle_subscription_created(data: dict) -> None:
+async def _handle_subscription_created(data: dict, meta: dict = None) -> None:
     """Subscription created — ensure plan is set (redundant with order_created)."""
+    if meta is None:
+        meta = {}
     attrs = data.get("attributes") or {}
-    meta = attrs.get("meta") or {}
     custom = meta.get("custom_data") or attrs.get("custom_data") or {}
     user_id = custom.get("user_id") or ""
 
@@ -113,7 +121,7 @@ async def _handle_subscription_created(data: dict) -> None:
     await _provision_user(user_id, attrs, data.get("id", ""))
 
 
-async def _handle_subscription_updated(data: dict) -> None:
+async def _handle_subscription_updated(data: dict, meta: dict = None) -> None:
     """Subscription changed — update plan if variant changed."""
     attrs = data.get("attributes") or {}
     variant_id = str(attrs.get("variant_id", ""))
@@ -143,7 +151,7 @@ async def _handle_subscription_updated(data: dict) -> None:
         )
 
 
-async def _handle_subscription_cancelled(data: dict) -> None:
+async def _handle_subscription_cancelled(data: dict, meta: dict = None) -> None:
     """Subscription cancelled — will expire at period end (grace period)."""
     attrs = data.get("attributes") or {}
     ends_at = attrs.get("ends_at", "unknown")
@@ -161,7 +169,7 @@ async def _handle_subscription_cancelled(data: dict) -> None:
         await redis.set(f"ipgeo:user:{user_id}:cancel_effective_at", str(ends_at))
 
 
-async def _handle_subscription_expired(data: dict) -> None:
+async def _handle_subscription_expired(data: dict, meta: dict = None) -> None:
     """Subscription expired — downgrade to free."""
     attrs = data.get("attributes") or {}
     customer_id = str(attrs.get("customer_id", ""))
@@ -173,7 +181,7 @@ async def _handle_subscription_expired(data: dict) -> None:
         logger.info("Subscription expired: user=%s downgraded to free", user_id)
 
 
-async def _handle_payment_failed(data: dict) -> None:
+async def _handle_payment_failed(data: dict, meta: dict = None) -> None:
     """Payment failed — log for now."""
     attrs = data.get("attributes") or {}
     logger.warning(
@@ -182,7 +190,7 @@ async def _handle_payment_failed(data: dict) -> None:
     )
 
 
-async def _handle_payment_success(data: dict) -> None:
+async def _handle_payment_success(data: dict, meta: dict = None) -> None:
     """Recurring payment succeeded — log for record keeping."""
     attrs = data.get("attributes") or {}
     logger.info(
@@ -244,12 +252,17 @@ async def create_checkout(
     user_id: str,
     variant_id: str,
     customer_email: str,
+    claim_token: str = "",
 ) -> dict:
     """
     Create a Lemon Squeezy checkout and return the checkout data.
 
     Call LS ``POST /v1/checkouts`` (JSON:API format), get back a signed
     checkout URL the user is redirected to.
+
+    LS does NOT support template variables in redirect_url, so we pre-generate
+    a claim_token and embed it. After payment LS redirects to
+    ``/success?token={claim_token}`` and the frontend claims the key with it.
 
     Returns::
 
@@ -263,6 +276,9 @@ async def create_checkout(
     settings = get_settings()
     url = f"{settings.lemonsqueezy_api_url}/checkouts"
 
+    # LS doesn't replace {checkout_id} — use our own claim token
+    redirect_url = f"https://getipgeo.com/success?token={claim_token}"
+
     payload = {
         "data": {
             "type": "checkouts",
@@ -272,9 +288,7 @@ async def create_checkout(
                     "custom": {"user_id": user_id},
                 },
                 "product_options": {
-                    "redirect_url": (
-                        f"https://getipgeo.com/success?checkout_id={{checkout_id}}"
-                    ),
+                    "redirect_url": redirect_url,
                 },
             },
             "relationships": {
