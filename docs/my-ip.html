@@ -72,6 +72,7 @@
 <nav class="container">
   <a href="/" class="logo">IP<span>Geo</span></a>
   <a href="/pricing">Pricing</a>
+  <span id="lang-selector"></span>
 </nav>
 
 <div class="container">
@@ -161,5 +162,6 @@ function countryFlag(cc) {
   return String.fromCodePoint(0x1F1E6 + cc.charCodeAt(0) - 65, 0x1F1E6 + cc.charCodeAt(1) - 65);
 }
 </script>
+<script src="/i18n.js"></script>
 </body>
 </html>

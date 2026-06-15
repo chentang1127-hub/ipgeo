@@ -236,33 +236,34 @@
   <nav>
     <a href="/" class="logo">IP<span>Geo</span></a>
     <div class="links">
-      <a href="#features">Features</a>
-      <a href="#demo">Demo</a>
-      <a href="#pricing">Pricing</a>
-      <a href="https://api.getipgeo.com/docs" target="_blank">Docs</a>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#demo" data-i18n="nav.demo">Demo</a>
+      <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+      <a href="https://api.getipgeo.com/docs" target="_blank" data-i18n="nav.docs">Docs</a>
       <a href="https://github.com/chentang1127-hub/ipgeo">GitHub</a>
-      <a href="/signup?plan=free" class="btn-nav">Get API Key</a>
+      <a href="/signup?plan=free" class="btn-nav" data-i18n="nav.signup">Get API Key</a>
+      <span id="lang-selector"></span>
     </div>
   </nav>
 
   <!-- ── Hero ── -->
   <section class="hero">
-    <div class="badge"><span>●</span> The Affordable Alternative to IPinfo</div>
-    <h1>Fortune-500 Accuracy,<br><span>Startup-Friendly Prices</span></h1>
-    <div class="free-callout">10,000 free requests every month. No credit card required.</div>
-    <p class="sub">MaxMind-grade accuracy without running MaxMind. Industry-standard GeoIP2, one API key, zero infrastructure. 60% cheaper than ipinfo.</p>
+    <div class="badge" data-i18n="hero.badge"><span>●</span> The Affordable Alternative to IPinfo</div>
+    <h1 data-i18n="hero.title">Fortune-500 Accuracy,<br><span>Startup-Friendly Prices</span></h1>
+    <div class="free-callout" data-i18n="hero.free_callout">10,000 free requests every month. No credit card required.</div>
+    <p class="sub" data-i18n="hero.subtitle">MaxMind-grade accuracy without running MaxMind. Industry-standard GeoIP2, one API key, zero infrastructure. 60% cheaper than ipinfo.</p>
     <div class="btn-row">
-      <a href="/signup?plan=free" class="btn btn-primary">Get Free API Key →</a>
-      <a href="https://api.getipgeo.com/docs" target="_blank" class="btn btn-outline">API Docs</a>
-      <a href="#demo" class="btn btn-outline">Try Live Demo ↓</a>
+      <a href="/signup?plan=free" class="btn btn-primary" data-i18n="hero.cta_free">Get Free API Key →</a>
+      <a href="https://api.getipgeo.com/docs" target="_blank" class="btn btn-outline" data-i18n="hero.cta_docs">API Docs</a>
+      <a href="#demo" class="btn btn-outline" data-i18n="hero.cta_demo">Try Live Demo ↓</a>
     </div>
   </section>
 
   <!-- ── Stats ── -->
   <div class="stats">
-    <div class="stat"><div class="num">&lt;0.3<span>ms</span></div><div class="label">Average response time</div></div>
-    <div class="stat"><div class="num">99.9<span>%</span></div><div class="label">Uptime SLA target</div></div>
-    <div class="stat"><div class="num">200<span>+</span></div><div class="label">Countries covered</div></div>
+    <div class="stat"><div class="num">&lt;0.3<span>ms</span></div><div class="label" data-i18n="stats.speed_label">Average response time</div></div>
+    <div class="stat"><div class="num">99.9<span>%</span></div><div class="label" data-i18n="stats.uptime_label">Uptime SLA target</div></div>
+    <div class="stat"><div class="num">200<span>+</span></div><div class="label" data-i18n="stats.coverage_label">Countries covered</div></div>
   </div>
 
   <!-- ── Live Demo ── -->
@@ -278,9 +279,9 @@
 
   <!-- ── Features ── -->
   <div id="features" class="section-head">
-    <div class="kicker">Why IPGeo</div>
-    <h2>Built for Developers</h2>
-    <p>Everything you need for IP geolocation, nothing you don't.</p>
+    <div class="kicker" data-i18n="features.kicker">Why IPGeo</div>
+    <h2 data-i18n="features.title">Built for Developers</h2>
+    <p data-i18n="features.subtitle">Everything you need for IP geolocation, nothing you don't.</p>
   </div>
   <div class="card-grid">
     <div class="card">
@@ -317,9 +318,9 @@
 
   <!-- ── Use Cases ── -->
   <div class="section-head">
-    <div class="kicker">Use Cases</div>
-    <h2>Turn IP Data Into Business Decisions</h2>
-    <p>Developers use IPGeo to increase revenue, prevent fraud, and optimize user experience.</p>
+    <div class="kicker" data-i18n="usecases.kicker">Use Cases</div>
+    <h2 data-i18n="usecases.title">Turn IP Data Into Business Decisions</h2>
+    <p data-i18n="usecases.subtitle">Developers use IPGeo to increase revenue, prevent fraud, and optimize user experience.</p>
   </div>
   <div class="card-grid">
     <div class="card">
@@ -365,39 +366,39 @@
   <!-- ── Trust Signals ── -->
   <div class="proof-row">
     <div class="proof-item">
-      <div class="num">MaxMind</div>
-      <div class="label">GeoIP2 Commercial Data</div>
+      <div class="num" data-i18n="trust.datasource">MaxMind</div>
+      <div class="label" data-i18n="trust.datasource_label">GeoIP2 Commercial Data</div>
     </div>
     <div class="proof-item">
-      <div class="num">Weekly</div>
-      <div class="label">Database Updates</div>
+      <div class="num" data-i18n="trust.updates">Weekly</div>
+      <div class="label" data-i18n="trust.updates_label">Database Updates</div>
     </div>
     <div class="proof-item">
-      <div class="num">OpenAPI 3.1</div>
-      <div class="label">Swagger Docs Included</div>
+      <div class="num" data-i18n="trust.openapi">OpenAPI 3.1</div>
+      <div class="label" data-i18n="trust.openapi_label">Swagger Docs Included</div>
     </div>
     <div class="proof-item">
-      <div class="num">Cloudflare</div>
-      <div class="label">Global CDN Edge</div>
+      <div class="num" data-i18n="trust.cdn">Cloudflare</div>
+      <div class="label" data-i18n="trust.cdn_label">Global CDN Edge</div>
     </div>
   </div>
 
   <!-- ── Trust Bar ── -->
   <div style="text-align:center;padding:0 0 64px;">
-    <a href="/status" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">🟢 System Status</a>
+    <a href="/status" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'" data-i18n="trustbar.status">🟢 System Status</a>
     <span style="color:var(--dim2);margin:0 14px;">·</span>
-    <a href="/roadmap" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">📋 Public Roadmap</a>
+    <a href="/roadmap" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'" data-i18n="trustbar.roadmap">📋 Public Roadmap</a>
     <span style="color:var(--dim2);margin:0 14px;">·</span>
-    <a href="/changelog" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">📝 Changelog</a>
+    <a href="/changelog" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'" data-i18n="trustbar.changelog">📝 Changelog</a>
     <span style="color:var(--dim2);margin:0 14px;">·</span>
-    <a href="/public-stats" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">📊 Public Stats</a>
+    <a href="/public-stats" style="color:var(--dim);font-size:.78rem;text-decoration:none;transition:color .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'" data-i18n="trustbar.stats">📊 Public Stats</a>
   </div>
 
   <!-- ── MaxMind Comparison ── -->
   <div class="section-head">
-    <div class="kicker">Why Not MaxMind Directly?</div>
-    <h2>All the Data, None of the Ops</h2>
-    <p>MaxMind GeoIP2 is the gold standard — but running it yourself means 50 GB downloads, server provisioning, and update pipelines. IPGeo gives you the same premium data through a REST API.</p>
+    <div class="kicker" data-i18n="why.kicker">Why Not MaxMind Directly?</div>
+    <h2 data-i18n="why.title">All the Data, None of the Ops</h2>
+    <p data-i18n="why.subtitle">MaxMind GeoIP2 is the gold standard — but running it yourself means 50 GB downloads, server provisioning, and update pipelines. IPGeo gives you the same premium data through a REST API.</p>
   </div>
   <div class="compare-grid" style="margin-bottom:80px; display:grid; gap:1px; background:var(--border); border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);">
     <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; background:var(--card);">
@@ -576,6 +577,7 @@
   </div>
 </footer>
 
+<script src="/i18n.js"></script>
 <script>
 // ── Analytics (fire-and-forget, never blocks the page) ──
 var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
