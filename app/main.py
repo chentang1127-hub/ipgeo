@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 # Global state
 # ---------------------------------------------------------------------------
 geo: Optional[GeoReader] = None
+_uptime_task: Optional["asyncio.Task"] = None
 
 
 # ---------------------------------------------------------------------------
@@ -47,11 +48,11 @@ geo: Optional[GeoReader] = None
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global geo
+    global geo, _uptime_task
     settings = get_settings()
 
     logging.basicConfig(
-        level=logging.INFO if settings.is_production else logging.DEBUG,
+        level=logging.INFO if settings.is_production else debugging,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
@@ -63,13 +64,23 @@ async def lifespan(app: FastAPI):
     try:
         redis = get_redis()
         await redis.set("ipgeo:stats:started_at", str(time.time()))
+        # Initialize uptime tracking if not present
+        if not await redis.exists("ipgeo:stats:health_checks_total"):
+            await redis.set("ipgeo:stats:health_checks_total", "0")
+            await redis.set("ipgeo:stats:health_checks_failed", "0")
     except Exception:
         pass
+
+    # Start background uptime heartbeat
+    import asyncio
+    _uptime_task = asyncio.create_task(_uptime_heartbeat())
 
     logger.info("IPGeo v%s started (env=%s)", app.version, settings.environment)
 
     yield
 
+    if _uptime_task:
+        _uptime_task.cancel()
     if geo:
         geo.close()
     await close_redis()
@@ -261,11 +272,41 @@ async def get_usage(user: dict = Depends(auth.authenticate)):
 
 @app.get("/v1/health")
 async def health():
-    """Health check — no auth, no billing."""
+    """Health check — no auth, no billing. Returns component-level status."""
+    components = {}
+    overall = "healthy"
+
+    # 1. Database
+    db_loaded = geo.loaded if geo else False
+    components["database"] = {
+        "status": "operational" if db_loaded else "degraded",
+        "detail": "GeoIP2 + GeoLite2 loaded" if db_loaded else "Database not loaded",
+    }
+    if not db_loaded:
+        overall = "degraded"
+
+    # 2. Redis
+    try:
+        redis = get_redis()
+        await redis.ping()
+        components["redis"] = {"status": "operational", "detail": "Connected"}
+    except Exception:
+        components["redis"] = {"status": "degraded", "detail": "Connection failed"}
+        overall = "degraded"
+
+    # 3. API
+    components["api"] = {"status": "operational", "detail": f"v{app.version}"}
+
+    # 4. Risk detection
+    components["risk_detection"] = {
+        "status": "operational" if risk._tor_exit_nodes is not None else "degraded",
+        "detail": f"{len(risk._tor_exit_nodes)} Tor exits tracked" if risk._tor_exit_nodes else "Initializing",
+    }
+
     return {
-        "status": "ok",
+        "status": overall,
         "version": app.version,
-        "db_loaded": geo.loaded if geo else False,
+        "components": components,
         "cache": geo.stats if geo else {},
     }
 
@@ -554,6 +595,32 @@ async def _incr_total(count: int = 1) -> None:
         pass
 
 
+async def _uptime_heartbeat(interval: int = 60) -> None:
+    """Record a health-check heartbeat every `interval` seconds for uptime tracking."""
+    import asyncio
+    while True:
+        try:
+            await asyncio.sleep(interval)
+            redis = get_redis()
+            # Increment total checks
+            await redis.incrby("ipgeo:stats:health_checks_total", 1)
+            # Run a lightweight self-check
+            ok = geo.loaded if geo else False
+            if ok:
+                try:
+                    await redis.ping()
+                except Exception:
+                    ok = False
+            if not ok:
+                await redis.incrby("ipgeo:stats:health_checks_failed", 1)
+            # Store the latest check timestamp
+            await redis.set("ipgeo:stats:last_health_check", str(time.time()))
+        except asyncio.CancelledError:
+            break
+        except Exception:
+            pass
+
+
 # ---------------------------------------------------------------------------
 # Public stats (no auth required)
 # ---------------------------------------------------------------------------
@@ -574,10 +641,25 @@ async def public_stats():
         started = 0.0
 
     uptime_sec = max(0, time.time() - started)
+
+    # Uptime percentage from heartbeat checks
+    uptime_pct = None
+    checks_total = 0
+    checks_failed = 0
+    try:
+        checks_total = int(await redis.get("ipgeo:stats:health_checks_total") or "0")
+        checks_failed = int(await redis.get("ipgeo:stats:health_checks_failed") or "0")
+        if checks_total > 0:
+            uptime_pct = round((1 - checks_failed / checks_total) * 100, 2)
+    except Exception:
+        pass
+
     return {
         "total_lookups_served": total,
         "uptime_seconds": int(uptime_sec),
         "uptime_days": round(uptime_sec / 86400, 1),
+        "uptime_pct": uptime_pct,
+        "health_checks_total": checks_total,
         "version": app.version,
         "db_loaded": geo.loaded if geo else False,
         "cache": geo.stats if geo else {},

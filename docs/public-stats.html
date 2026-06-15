@@ -68,7 +68,7 @@
 </div>
 
 <footer>
-  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/pricing">Pricing</a> · <a href="/public-stats">Public Stats</a> · <a href="/changelog">Changelog</a></p>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/status">Status</a> · <a href="/roadmap">Roadmap</a> · <a href="/public-stats">Public Stats</a> · <a href="/changelog">Changelog</a></p>
 </footer>
 
 <script>
@@ -93,13 +93,14 @@ async function load() {
     var html = '';
 
     html += '<div class="stat-card"><div class="number">' + fmt(d.total_lookups_served) + '</div><div class="label">Total Lookups Served</div></div>';
-    html += '<div class="stat-card"><div class="number small">' + uptimeStr(d.uptime_seconds) + '</div><div class="label">Uptime Since Last Deploy</div></div>';
+    html += '<div class="stat-card"><div class="number small">' + (d.uptime_pct != null ? d.uptime_pct + '%' : '—') + '</div><div class="label">Uptime (' + fmt(d.health_checks_total||0) + ' checks)</div></div>';
 
     var hit = d.cache && d.cache.cache_hit_rate_pct != null ? d.cache.cache_hit_rate_pct : 0;
     html += '<div class="stat-card"><div class="number small">' + hit + '%</div><div class="label">Cache Hit Rate</div></div>';
 
+    var uptimeSince = uptimeStr(d.uptime_seconds);
     var dbOk = d.db_loaded;
-    html += '<div class="stat-card info"><div class="line"><span class="status-dot ' + (dbOk ? 'ok' : '') + '"></span><strong>' + (dbOk ? 'Online' : 'Degraded') + '</strong></div><div class="line">Version ' + d.version + '</div><div class="line">Cache entries: ' + (d.cache ? d.cache.cache_size : 0) + '</div></div>';
+    html += '<div class="stat-card info"><div class="line"><span class="status-dot ' + (dbOk ? 'ok' : '') + '"></span><strong>' + (dbOk ? 'Online' : 'Degraded') + '</strong></div><div class="line">Version ' + d.version + '</div><div class="line">Tracking: ' + uptimeSince + '</div></div>';
 
     document.getElementById('stats-grid').innerHTML = html;
   } catch(e) {
