@@ -267,8 +267,6 @@ async def create_checkout(
         "data": {
             "type": "checkouts",
             "attributes": {
-                "store_id": int(settings.lemonsqueezy_store_id),
-                "variant_id": int(variant_id),
                 "checkout_data": {
                     "email": customer_email,
                     "custom": {"user_id": user_id},
@@ -277,6 +275,20 @@ async def create_checkout(
                     "redirect_url": (
                         f"https://getipgeo.com/success?checkout_id={{checkout_id}}"
                     ),
+                },
+            },
+            "relationships": {
+                "store": {
+                    "data": {
+                        "type": "stores",
+                        "id": str(settings.lemonsqueezy_store_id),
+                    }
+                },
+                "variant": {
+                    "data": {
+                        "type": "variants",
+                        "id": str(variant_id),
+                    }
                 },
             },
         }
