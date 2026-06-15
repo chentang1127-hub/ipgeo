@@ -19,6 +19,7 @@ from typing import Optional
 import maxminddb
 
 from .config import get_settings
+from .risk import check_risk
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +215,13 @@ class GeoReader:
 
         # 5. Assemble response
         result = self._build_result(ip_str, city_data, asn_data)
+
+        # 6. Risk detection (Tor exit, hosting/datacenter)
+        asn = asn_data.get("autonomous_system_number")
+        risk_flags = check_risk(ip_str, asn)
+        if risk_flags:
+            result["risk_flags"] = risk_flags
+
         self._cache_put(cache_key, result)
         return result
 

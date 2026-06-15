@@ -31,6 +31,7 @@ from . import billing
 from .billing import PLAN_QUOTAS
 from . import metrics as m
 from . import ratelimit
+from . import risk
 from . import webhooks
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ async def lifespan(app: FastAPI):
 
     await init_redis()
     geo = GeoReader()
+    risk.init_risk()
     logger.info("IPGeo v%s started (env=%s)", app.version, settings.environment)
 
     yield
