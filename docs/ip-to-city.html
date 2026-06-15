@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP to City API — Precise City-Level Geolocation | IPGeo</title>
+  <meta name="description" content="Get city, state, and postal code from any IP address. 95%+ city accuracy with GeoIP2 data. 10,000 free lookups/month. Sub-millisecond response.">
+  <meta name="keywords" content="IP to city, IP to city API, lookup city from IP, geoip city lookup, IP city location, geolocation API city level">
+  <meta property="og:title" content="IP to City API — Precise City Geolocation">
+  <meta property="og:description" content="Find city, state, and postal code from any IP. 95%+ accuracy with MaxMind GeoIP2. Free for 10K queries/month.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    nav a:hover { color: var(--text); }
+
+    h1 { font-size: 2.2rem; font-weight: 800; color: #fff; line-height: 1.3; margin-bottom: 12px; }
+    h1 span { color: var(--accent); }
+    .subtitle { color: var(--dim); font-size: 1.05rem; margin-bottom: 48px; max-width: 560px; }
+
+    h2 { font-size: 1.4rem; color: #fff; margin: 48px 0 16px; }
+    h3 { font-size: 1.05rem; color: #fff; margin: 28px 0 8px; }
+    p { color: var(--dim); margin-bottom: 16px; }
+    pre { background: #0d0d14; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; font-size: .82rem; margin: 16px 0; }
+    code { font-family: 'Fira Code', monospace; font-size: .85em; }
+
+    .try-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 32px 0; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .try-box input { flex: 1; min-width: 200px; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: .9rem; font-family: 'Fira Code', monospace; outline: none; }
+    .try-box input:focus { border-color: var(--accent); }
+    .try-box button { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: .9rem; cursor: pointer; }
+    .try-box button:hover { background: #6d28d9; }
+    .try-box .result-inline { width: 100%; display: none; font-size: .95rem; }
+    .try-box .result-inline.active { display: block; }
+    .try-box .result-inline strong { color: #fff; }
+
+    .data-tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+    .tier { border-radius: 10px; padding: 24px; border: 1px solid var(--border); }
+    .tier.lite { background: var(--card); }
+    .tier.pro { background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(16,185,129,0.06)); border-color: rgba(124,58,237,0.3); }
+    .tier h4 { color: #fff; font-size: .95rem; margin-bottom: 8px; }
+    .tier .price { font-weight: 700; color: var(--accent); font-size: 1.1rem; margin-bottom: 8px; }
+    .tier ul { list-style: none; padding: 0; }
+    .tier li { color: var(--dim); font-size: .85rem; padding: 4px 0; }
+    .tier li::before { content: "✓ "; color: var(--green); }
+    .tier.lite li::before { color: var(--dim); }
+
+    .cta-block { background: linear-gradient(135deg, #1a1025, #0f0f1f); border: 1px solid var(--accent); border-radius: 12px; padding: 36px; margin: 48px 0; text-align: center; }
+    .cta-block h2 { margin: 0 0 12px; }
+    .cta-block p { font-size: 1rem; margin-bottom: 20px; }
+    .btn { display: inline-block; padding: 13px 30px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; font-size: .95rem; text-decoration: none; }
+    .btn:hover { background: #6d28d9; }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; margin-top: 60px; }
+    footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) { .data-tiers { grid-template-columns: 1fr; } h1 { font-size: 1.7rem; } }
+  </style>
+</head>
+<body>
+
+<nav class="container">
+  <a href="/" class="logo">IP<span>Geo</span></a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<div class="container">
+
+  <h1>IP to City API —<br><span>City-Level Precision</span></h1>
+  <p class="subtitle">Go beyond country. Get the city, state, postal code, and coordinates for any IP address. 95%+ city fill rate with GeoIP2.</p>
+
+  <!-- Quick Try -->
+  <div class="try-box">
+    <input type="text" id="try-ip" placeholder="Try an IP: 8.8.8.8" autocomplete="off">
+    <button onclick="tryLookup()">Look Up</button>
+    <div class="result-inline" id="try-result"></div>
+  </div>
+
+  <!-- Response Example -->
+  <h2>Beyond Country — Full City Context</h2>
+  <p>City, region, postal code, coordinates, and timezone — all from a single IP lookup:</p>
+  <pre><code>curl -H "X-API-Key: ipgeo_YOUR_KEY" \
+  https://api.getipgeo.com/v1/ip/47.254.43.183</code></pre>
+  <pre><code>{
+  "ip": "47.254.43.183",
+  "city": "Fremont",
+  "country": { "code": "US", "name": "United States" },
+  "latitude": 37.5487,
+  "longitude": -121.9886,
+  "postal": { "code": "94536" },
+  "subdivisions": [{ "name": "California" }],
+  "timezone": "America/Los_Angeles"
+}</code></pre>
+
+  <!-- Data Tiers -->
+  <h2>Two Data Tiers — Pick Your Accuracy</h2>
+  <div class="data-tiers">
+    <div class="tier lite">
+      <h4>GeoLite2</h4>
+      <div class="price">Free & Starter plans</div>
+      <ul>
+        <li>~37% city fill rate</li>
+        <li>Limited postal codes</li>
+        <li>Partial subdivisions</li>
+        <li>Weekly updates</li>
+        <li>Great for country-level</li>
+      </ul>
+    </div>
+    <div class="tier pro">
+      <h4>GeoIP2 — Commercial</h4>
+      <div class="price">Pro, Business & Enterprise</div>
+      <ul>
+        <li>95%+ city fill rate</li>
+        <li>Full postal code coverage</li>
+        <li>Complete subdivisions</li>
+        <li>Daily updates</li>
+        <li>Enterprise data quality</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Use cases -->
+  <h2>When City-Level Data Matters</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;">
+      <h4 style="color:#fff;font-size:.95rem;margin-bottom:6px;">🛒 Local Inventory</h4>
+      <p style="color:var(--dim);font-size:.85rem;margin:0;">Show "available in Fremont store" instead of "available in US." City precision drives in-store traffic.</p>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;">
+      <h4 style="color:#fff;font-size:.95rem;margin-bottom:6px;">📦 Tax Calculation</h4>
+      <p style="color:var(--dim);font-size:.85rem;margin:0;">US sales tax varies by city and ZIP. City + postal code data means accurate checkout calculations.</p>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;">
+      <h4 style="color:#fff;font-size:.95rem;margin-bottom:6px;">📍 Localized Content</h4>
+      <p style="color:var(--dim);font-size:.85rem;margin:0;">"Serving Los Angeles" converts better than "Serving California." City-level personalization drives engagement.</p>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;">
+      <h4 style="color:#fff;font-size:.95rem;margin-bottom:6px;">🛡️ Fraud Detection</h4>
+      <p style="color:var(--dim);font-size:.85rem;margin:0;">Billing address says New York but IP says Lagos? City mismatch is a strong fraud signal.</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-block">
+    <h2>Ready to know where your users really are?</h2>
+    <p>10,000 free city-level lookups every month. Upgrade to Pro for 95%+ accuracy.</p>
+    <a href="/signup?plan=free" class="btn">Get Free API Key →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/pricing">Pricing</a> · <a href="/ip-to-country">IP to Country</a> · <a href="/ip-to-city">IP to City</a> · <a href="/ip-lookup">IP Lookup</a></p>
+</footer>
+
+<script>
+var DEMO_KEY = 'ipgeo_7b0302ffc7799866da66e66feb9bd09203f28c14f229c72ee5481dc22a3ba902';
+
+async function tryLookup() {
+  var ip = document.getElementById('try-ip').value.trim() || '47.254.43.183';
+  var el = document.getElementById('try-result');
+  try {
+    var resp = await fetch('https://api.getipgeo.com/v1/ip/' + ip, {headers:{'X-API-Key':DEMO_KEY}});
+    var data = await resp.json();
+    var parts = [];
+    if (data.city) parts.push('<strong>' + data.city + '</strong>');
+    if (data.subdivisions && data.subdivisions[0]) parts.push(data.subdivisions[0].name);
+    if (data.country) parts.push(data.country.name);
+    if (data.postal && data.postal.code) parts.push(data.postal.code);
+    el.innerHTML = parts.join(', ') || 'No city data for this IP';
+    el.className = 'result-inline active';
+  } catch(e) {
+    el.textContent = 'Lookup failed — try again';
+    el.className = 'result-inline active';
+  }
+}
+
+document.getElementById('try-ip').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') tryLookup();
+});
+</script>
+
+</body>
+</html>
