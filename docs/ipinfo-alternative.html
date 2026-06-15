@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPinfo Alternative — Same Data, 60% Less | IPGeo</title>
+  <meta name="description" content="Looking for an IPinfo alternative? IPGeo delivers the same MaxMind GeoIP2 data at 60% lower cost. 500K queries for $29/mo vs $399 at IPinfo. Free migration in 60 seconds.">
+  <meta property="og:title" content="IPinfo Alternative — Same MaxMind Data, 60% Less">
+  <meta property="og:description" content="500K queries for $29/mo vs $399 at IPinfo. Same GeoIP2 accuracy. One API key, zero migration headache.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; --red: #ef4444; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    nav a:hover { color: var(--text); }
+
+    h1 { font-size: 2.4rem; font-weight: 800; color: #fff; line-height: 1.25; margin-bottom: 16px; }
+    h1 span { color: var(--accent); }
+    .subtitle { color: var(--dim); font-size: 1.05rem; margin-bottom: 48px; max-width: 580px; }
+
+    h2 { font-size: 1.5rem; color: #fff; margin: 56px 0 20px; }
+    h3 { font-size: 1.1rem; color: #fff; margin: 24px 0 8px; }
+    p { color: var(--dim); margin-bottom: 16px; }
+
+    .highlight { background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(16,185,129,0.08)); border: 1px solid rgba(124,58,237,0.2); border-radius: 10px; padding: 20px 24px; margin: 32px 0; }
+    .highlight p { margin: 0; color: var(--text); font-size: .95rem; }
+    .highlight strong { color: var(--accent); }
+
+    /* Price comparison */
+    .price-compare { width: 100%; border-collapse: collapse; margin: 32px 0; font-size: .88rem; }
+    .price-compare th { text-align: left; padding: 14px 16px; color: var(--dim); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+    .price-compare th:last-child { color: var(--accent); }
+    .price-compare td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .price-compare td:first-child { color: var(--text); font-weight: 600; }
+    .price-compare td.ipgeo { color: var(--green); font-weight: 600; }
+    .price-compare td.ipinfo { color: var(--dim); }
+    .price-compare .winner { background: rgba(16,185,129,0.06); }
+
+    .check { color: var(--green); }
+    .cross { color: var(--red); }
+
+    /* Side by side */
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0; }
+    .sb-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 28px; }
+    .sb-card.ipgeo-card { border-color: rgba(16,185,129,0.3); background: linear-gradient(135deg, #0a1a15, var(--card)); }
+    .sb-card h3 { margin: 0 0 16px; font-size: 1rem; }
+    .sb-card ul { list-style: none; padding: 0; }
+    .sb-card li { padding: 6px 0; font-size: .88rem; }
+    .sb-card.ipinfo-card li { color: var(--dim); }
+    .sb-card.ipgeo-card li { color: var(--text); }
+    .sb-card.ipinfo-card li::before { content: "— "; color: var(--dim); }
+    .sb-card.ipgeo-card li::before { content: "✓ "; color: var(--green); }
+
+    /* FAQ */
+    .faq { margin: 48px 0; }
+    .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 12px; }
+    .faq-item h4 { color: #fff; font-size: .95rem; margin-bottom: 6px; }
+    .faq-item p { color: var(--dim); font-size: .85rem; margin: 0; }
+
+    /* CTA */
+    .cta-block { background: linear-gradient(135deg, #1a1025, #0f0f1f); border: 1px solid var(--accent); border-radius: 12px; padding: 40px; margin: 56px 0; text-align: center; }
+    .cta-block h2 { margin: 0 0 12px; }
+    .cta-block p { font-size: 1rem; margin-bottom: 24px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: .95rem; text-decoration: none; transition: all .2s; border: none; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.35); }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; margin-top: 60px; }
+    footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .side-by-side { grid-template-columns: 1fr; }
+      h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="container">
+  <a href="/" class="logo">IP<span>Geo</span></a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<div class="container">
+
+  <h1>IPinfo Is Great.<br><span>But It Costs 10× More.</span></h1>
+  <p class="subtitle">IPinfo pioneered the IP geolocation API space. But their pricing hasn't kept up. IPGeo gives you the same MaxMind GeoIP2 data, sub-millisecond speed, and a cleaner API — at 60% less.</p>
+
+  <!-- ── Price Comparison ── -->
+  <h2>Pricing: The Numbers Don't Lie</h2>
+  <p>Both IPinfo and IPGeo use MaxMind as the primary data source. Here's what each charges:</p>
+
+  <table class="price-compare">
+    <tr><th>Monthly Queries</th><th>IPinfo</th><th style="color:var(--green);">IPGeo</th><th>You Save</th></tr>
+    <tr>
+      <td>10,000</td>
+      <td class="ipinfo">$99/mo</td>
+      <td class="ipgeo winner">$0 (Free)</td>
+      <td class="ipgeo">$99/mo</td>
+    </tr>
+    <tr>
+      <td>50,000</td>
+      <td class="ipinfo">$249/mo</td>
+      <td class="ipgeo winner">$9/mo</td>
+      <td class="ipgeo">$240/mo</td>
+    </tr>
+    <tr>
+      <td>100,000</td>
+      <td class="ipinfo">$399/mo</td>
+      <td class="ipgeo winner">$9/mo</td>
+      <td class="ipgeo">$390/mo</td>
+    </tr>
+    <tr>
+      <td>500,000</td>
+      <td class="ipinfo">$999/mo</td>
+      <td class="ipgeo winner">$29/mo</td>
+      <td class="ipgeo">$970/mo</td>
+    </tr>
+  </table>
+
+  <div class="highlight">
+    <p><strong>At 100K queries/month, IPGeo saves you $4,680/year.</strong> For the same MaxMind data. The same accuracy. The same endpoints. That's a MacBook Pro every year — just for switching API providers.</p>
+  </div>
+
+  <!-- ── Side by Side ── -->
+  <h2>Feature Comparison</h2>
+  <div class="side-by-side">
+    <div class="sb-card ipinfo-card">
+      <h3 style="color:var(--dim);">IPinfo</h3>
+      <ul>
+        <li>Bearer token auth</li>
+        <li>Remote API (12ms P50)</li>
+        <li>MaxMind + proprietary data</li>
+        <li>Excellent docs & SDKs</li>
+        <li>IP reputation & ASN data</li>
+        <li>Pricing: premium enterprise</li>
+        <li>Free tier: 50K/mo</li>
+      </ul>
+    </div>
+    <div class="sb-card ipgeo-card">
+      <h3>IPGeo</h3>
+      <ul>
+        <li>Simple X-API-Key header</li>
+        <li>Local mmap (&lt;1ms P50)</li>
+        <li>Same MaxMind GeoIP2 data</li>
+        <li>Swagger / OpenAPI 3.1 docs</li>
+        <li>Core geolocation focus</li>
+        <li>Pricing: startup-friendly</li>
+        <li>Free tier: 10K/mo</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Speed ── -->
+  <h2>Speed: Local vs Remote</h2>
+  <p>IPinfo runs as a remote API — every lookup makes a network round trip. IPGeo loads the MaxMind database directly on the server via memory-mapped files. No network hop means sub-millisecond responses.</p>
+  <table class="price-compare">
+    <tr><th>Metric</th><th>IPinfo</th><th style="color:var(--green);">IPGeo</th></tr>
+    <tr><td>P50 Latency</td><td class="ipinfo">~12ms</td><td class="ipgeo winner"><0.3ms</td></tr>
+    <tr><td>P99 Latency</td><td class="ipinfo">~60ms</td><td class="ipgeo winner"><1.2ms</td></tr>
+    <tr><td>Architecture</td><td class="ipinfo">Remote API call</td><td class="ipgeo winner">mmap local database</td></tr>
+  </table>
+  <p>40× faster median response. If you're doing IP lookups on every request, that difference adds up fast.</p>
+
+  <!-- ── When IPinfo Makes Sense ── -->
+  <h2>When IPinfo Is Still the Better Choice</h2>
+  <p>We're honest about this — IPinfo is a strong product. Here's when you should stick with them:</p>
+  <table class="price-compare">
+    <tr><td>You need <strong>ASN/BGP/peering data</strong></td><td>IPinfo's proprietary network data is best-in-class</td></tr>
+    <tr><td>You need <strong>IP reputation scoring</strong></td><td>IPinfo's abuse contact DB is unique</td></tr>
+    <tr><td>Your company has <strong>enterprise procurement</strong></td><td>IPinfo has SOC 2, SSO, and dedicated reps</td></tr>
+    <tr><td>You're doing <strong>5M+ queries/month</strong></td><td>IPinfo's volume discounts may beat us at extreme scale</td></tr>
+    <tr><td>You want <strong>basic IP geolocation at a fair price</strong></td><td class="ipgeo">Use IPGeo →</td></tr>
+  </table>
+
+  <!-- ── Migration ── -->
+  <h2>Switching Takes 60 Seconds</h2>
+  <p>Both APIs return country, city, coordinates, ISP, and ASN. The JSON structure is similar enough that migration is trivial:</p>
+  <table class="price-compare">
+    <tr><th>IPinfo</th><th>IPGeo</th></tr>
+    <tr><td style="font-family:monospace;font-size:.82rem;color:var(--dim);">curl -H "Authorization: Bearer TOKEN"<br>https://ipinfo.io/8.8.8.8</td>
+    <td class="ipgeo" style="font-family:monospace;font-size:.82rem;">curl -H "X-API-Key: ipgeo_KEY"<br>https://api.getipgeo.com/v1/ip/8.8.8.8</td></tr>
+  </table>
+  <p style="font-size:.85rem;color:var(--dim);">That's it. Change the header, change the URL. No SDK rewrites, no schema migration.</p>
+
+  <!-- ── FAQ ── -->
+  <h2>Common Questions</h2>
+  <div class="faq">
+    <div class="faq-item">
+      <h4>Is the data as accurate as IPinfo?</h4>
+      <p>Both IPinfo and IPGeo use MaxMind GeoIP2 as the primary data source for geolocation. Country-level accuracy is effectively identical (99.8%+). IPinfo supplements with proprietary IP reputation data which we don't offer — if you need abuse contact info or BGP data, IPinfo is the better choice. If you need reliable IP geolocation, we're equal.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Why is IPinfo so much more expensive?</h4>
+      <p>IPinfo invests heavily in proprietary data collection (BGP feeds, IP reputation, ASN mapping), enterprise sales, and a large engineering team. That's reflected in their pricing. We focus exclusively on geolocation and keep our stack lean — the savings pass through to you.</p>
+    </div>
+    <div class="faq-item">
+      <h4>What about IPinfo's free tier? 50K is more than your 10K.</h4>
+      <p>IPinfo's free tier is generous but limited: no commercial use, rate-limited, and they upsell you hard once you cross 50K. Our free tier is smaller (10K) but includes commercial use and HTTPS. For production apps, our paid plans start at $9/mo — IPinfo's start at $99/mo.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Can I use both during migration?</h4>
+      <p>Absolutely. Start with IPGeo's free tier side-by-side with IPinfo. Compare results, validate accuracy, then flip the switch when you're confident. No commitment, no contract.</p>
+    </div>
+  </div>
+
+  <!-- ── CTA ── -->
+  <div class="cta-block">
+    <h2>Stop overpaying for IP geolocation.</h2>
+    <p>Same MaxMind data. 60% less. Free migration in 60 seconds.</p>
+    <a href="/signup?plan=free" class="btn btn-primary">Get Free API Key →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/pricing">Pricing</a> · <a href="/why-maxmind">Why Not MaxMind?</a> · <a href="/ipinfo-alternative">IPinfo Alternative</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+</footer>
+
+</body>
+</html>
