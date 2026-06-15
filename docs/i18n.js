@@ -161,13 +161,15 @@
       '#goog-gt-tt { display: none !important; }' +
       '.goog-tooltip { display: none !important; }' +
       '.goog-tooltip:hover { display: none !important; }' +
-      '.goog-text-highlight { background: none !important; box-shadow: none !important; }';
+      '.goog-text-highlight { background: none !important; box-shadow: none !important; }' +
+      '#google_translate_element { display: none !important; }' +
+      'iframe.goog-te-menu-frame { display: none !important; }';
     document.head.appendChild(hideCss);
   }
 
   function buildButtonHTML(lang) {
     var cls = lang.code === current ? ' active' : '';
-    return '<button class="lang-link' + cls + '" data-lang="' + lang.code + '">' + lang.name + '</button>';
+    return '<button class="lang-link' + cls + '" data-lang="' + lang.code + '">' + lang.flag + ' ' + lang.name + '</button>';
   }
 
   function enhanceSelector() {
@@ -188,6 +190,15 @@
         html += buildButtonHTML(LANGS[i]);
       }
       container.innerHTML = html;
+    } else {
+      // Update existing static buttons to include flags
+      existing.forEach(function (b) {
+        var langCode = b.getAttribute('data-lang');
+        var def = getLangDef(langCode);
+        if (def) {
+          b.textContent = def.flag + ' ' + def.name;
+        }
+      });
     }
 
     // Add click handlers to all buttons
@@ -216,8 +227,10 @@
   function init() {
     document.documentElement.lang = current;
 
-    // If a non-English language was stored, load Google Translate
-    if (current !== 'en') {
+    // Only auto-translate if the user EXPLICITLY chose this language
+    // in a previous visit (stored in localStorage). Never auto-translate
+    // based on browser language alone — that triggers Google's UI.
+    if (current !== 'en' && localStorage.getItem('ipgeo_lang')) {
       loadGoogleTranslate();
     }
 
