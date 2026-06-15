@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Why Developers Switch From MaxMind to IPGeo</title>
+  <meta name="description" content="MaxMind GeoIP2 data without the complexity. No license keys, no database downloads, no update pipelines — just one API. See why developers are switching.">
+  <meta property="og:title" content="Why Developers Switch From MaxMind to IPGeo">
+  <meta property="og:description" content="Same MaxMind GeoIP2 accuracy. Zero ops. One API call. No license to manage.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; --red: #ef4444; --orange: #f59e0b; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    nav a:hover { color: var(--text); }
+
+    h1 { font-size: 2.4rem; font-weight: 800; color: #fff; line-height: 1.25; margin-bottom: 16px; }
+    h1 span { color: var(--accent); }
+    .subtitle { color: var(--dim); font-size: 1.05rem; margin-bottom: 48px; max-width: 560px; }
+
+    h2 { font-size: 1.5rem; color: #fff; margin: 56px 0 20px; }
+    h3 { font-size: 1.1rem; color: #fff; margin: 24px 0 8px; }
+
+    p { color: var(--dim); margin-bottom: 16px; }
+
+    /* Comparison table */
+    .compare-table { width: 100%; border-collapse: collapse; margin: 32px 0; font-size: .9rem; }
+    .compare-table th { text-align: left; padding: 14px 16px; color: var(--dim); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--border); }
+    .compare-table th:first-child { color: var(--text); }
+    .compare-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .compare-table td:first-child { color: var(--text); font-weight: 600; }
+    .compare-table .ipgeo { color: var(--green); }
+    .compare-table .maxmind { color: var(--dim); }
+    .check { color: var(--green); }
+    .cross { color: var(--red); }
+
+    /* Pain → Relief cards */
+    .pain-relief { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0; }
+    .pain, .relief { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 28px; }
+    .pain h3 { color: var(--red); margin-top: 0; }
+    .relief h3 { color: var(--green); margin-top: 0; }
+    .pain ul, .relief ul { list-style: none; padding: 0; }
+    .pain li { color: var(--dim); padding: 6px 0; font-size: .9rem; }
+    .pain li::before { content: "✕ "; color: var(--red); }
+    .relief li { color: var(--text); padding: 6px 0; font-size: .9rem; }
+    .relief li::before { content: "✓ "; color: var(--green); }
+
+    /* Timeline */
+    .timeline { margin: 40px 0; }
+    .step { display: flex; gap: 16px; margin-bottom: 24px; position: relative; }
+    .step .num {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(124,58,237,0.15); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .85rem;
+    }
+    .step h4 { color: #fff; font-size: .95rem; margin-bottom: 2px; }
+    .step p { color: var(--dim); font-size: .85rem; margin: 0; }
+
+    /* CTA */
+    .cta-block {
+      background: linear-gradient(135deg, #1a1025, #0f0f1f);
+      border: 1px solid var(--accent);
+      border-radius: 12px; padding: 40px; margin: 56px 0; text-align: center;
+    }
+    .cta-block h2 { margin: 0 0 12px; }
+    .cta-block p { font-size: 1rem; margin-bottom: 24px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: .95rem;
+      text-decoration: none; transition: all .2s; cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.35); }
+
+    .faq { margin: 48px 0; }
+    .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 12px; }
+    .faq-item h4 { color: #fff; font-size: .95rem; margin-bottom: 6px; }
+    .faq-item p { color: var(--dim); font-size: .85rem; margin: 0; }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; margin-top: 60px; }
+    footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .pain-relief { grid-template-columns: 1fr; }
+      h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="container">
+  <a href="/" class="logo">IP<span>Geo</span></a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<div class="container">
+
+  <h1>MaxMind Data,<br><span>Minus the Headache</span></h1>
+  <p class="subtitle">MaxMind GeoIP2 is the industry gold standard. But running it yourself means license keys, 50 GB downloads, weekly updates, and server maintenance. IPGeo gives you the same accuracy through one API call.</p>
+
+  <!-- ── At a Glance ── -->
+  <table class="compare-table">
+    <tr><th></th><th>MaxMind Direct</th><th>IPGeo</th></tr>
+    <tr>
+      <td>Data Quality</td>
+      <td>GeoIP2 (gold standard)</td>
+      <td class="ipgeo">Same GeoIP2 →</td>
+    </tr>
+    <tr>
+      <td>Setup Time</td>
+      <td class="maxmind">Hours to days</td>
+      <td class="ipgeo"><span class="check">✓</span> 60 seconds</td>
+    </tr>
+    <tr>
+      <td>Database Download</td>
+      <td class="maxmind">50 GB+ weekly</td>
+      <td class="ipgeo"><span class="check">✓</span> Never — it's an API</td>
+    </tr>
+    <tr>
+      <td>License Management</td>
+      <td class="maxmind">Commercial license required</td>
+      <td class="ipgeo"><span class="check">✓</span> Included in subscription</td>
+    </tr>
+    <tr>
+      <td>Server Infrastructure</td>
+      <td class="maxmind">Provision your own</td>
+      <td class="ipgeo"><span class="check">✓</span> Fully managed</td>
+    </tr>
+    <tr>
+      <td>Updates</td>
+      <td class="maxmind">Manual pipeline</td>
+      <td class="ipgeo"><span class="check">✓</span> Automatic (weekly)</td>
+    </tr>
+    <tr>
+      <td>GeoIP2 Pricing</td>
+      <td class="maxmind">$50/mo + server cost</td>
+      <td class="ipgeo"><span class="check">✓</span> From $29/mo all-in</td>
+    </tr>
+  </table>
+
+  <!-- ── The Real Cost ── -->
+  <h2>The Hidden Cost of "Just Using MaxMind"</h2>
+  <p>On paper, MaxMind's $50/month flat rate looks unbeatable. In reality, here's what you're signing up for:</p>
+
+  <div class="pain-relief">
+    <div class="pain">
+      <h3>The MaxMind Way</h3>
+      <ul>
+        <li>Create a MaxMind account and apply for a commercial license</li>
+        <li>Provision a server with 50 GB+ free disk space</li>
+        <li>Write a download script with your license key</li>
+        <li>Set up a cron job for weekly updates</li>
+        <li>Build a REST API wrapper around the mmdb file</li>
+        <li>Handle mmap reloads when the database updates</li>
+        <li>Monitor disk space, update failures, database corruption</li>
+        <li>Repeat for staging, production, and backup environments</li>
+      </ul>
+    </div>
+    <div class="relief">
+      <h3>The IPGeo Way</h3>
+      <ul>
+        <li>Sign up with your email</li>
+        <li>Copy your API key</li>
+        <li>Make one curl request</li>
+        <li>Go back to building your product</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Time Breakdown ── -->
+  <h2>What Does "Just Use MaxMind" Actually Cost You?</h2>
+  <p>A realistic timeline for a developer setting up MaxMind from scratch:</p>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <h4>Apply for a commercial license</h4>
+        <p>Fill out MaxMind's form, wait for approval. 1–3 business days if everything goes smoothly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <h4>Provision a server</h4>
+        <p>Spin up a VPS with 50+ GB storage. Even a budget one costs $10–20/month.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <h4>Download the database</h4>
+        <p>Write an automated download script. The GeoIP2 City database is multiple GB compressed — you'll need rsync or HTTP range requests for efficiency.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">4</div>
+      <div>
+        <h4>Build the API wrapper</h4>
+        <p>Write a REST API around the mmdb file. Handle mmap reloads so lookups don't fail during updates. Add authentication, rate limiting, monitoring.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">5</div>
+      <div>
+        <h4>Maintain it forever</h4>
+        <p>Database updates fail. Disks fill up. mmap files get corrupted. Your "one-time setup" is now a permanent maintenance burden.</p>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-size:1.1rem;color:var(--text);margin:40px 0;">
+    <strong>Total: 1–2 weeks of engineering time + $10–20/month server + ongoing maintenance.</strong><br>
+    <span style="color:var(--accent);">IPGeo: 60 seconds. One API key. $9/month.</span>
+  </p>
+
+  <!-- ── When MaxMind Direct Makes Sense ── -->
+  <h2>When Should You Still Use MaxMind Directly?</h2>
+  <p>We're not here to say MaxMind is bad — it's not. Here's when it's the right choice:</p>
+  <table class="compare-table">
+    <tr><td>You're doing <strong>500K+ queries per day</strong></td><td class="check">MaxMind flat rate wins at extreme scale</td></tr>
+    <tr><td>You need <strong>offline/air-gapped</strong> lookups</td><td class="check">Local database is the only option</td></tr>
+    <tr><td>You have a <strong>dedicated infra team</strong></td><td class="check">The ops overhead is negligible for you</td></tr>
+    <tr><td>You want to <strong>ship your product this week</strong></td><td class="ipgeo">Use IPGeo →</td></tr>
+    <tr><td>You're an <strong>indie dev or small team</strong></td><td class="ipgeo">Use IPGeo →</td></tr>
+    <tr><td>You don't want to <strong>think about GeoIP ops</strong></td><td class="ipgeo">Use IPGeo →</td></tr>
+  </table>
+
+  <!-- ── FAQ ── -->
+  <h2>Common Questions</h2>
+  <div class="faq">
+    <div class="faq-item">
+      <h4>Is IPGeo just reselling MaxMind data?</h4>
+      <p>We use MaxMind GeoIP2 databases under a commercial redistribution license — the same way Cloudflare, Stripe, and thousands of enterprises use MaxMind. What we sell is the infrastructure, API, uptime, and developer experience around it. You're paying for "never having to think about GeoIP databases."</p>
+    </div>
+    <div class="faq-item">
+      <h4>Is the data the same quality as MaxMind direct?</h4>
+      <p>Yes. Pro, Business, and Enterprise plans use the exact same MaxMind GeoIP2 commercial database (95%+ city accuracy). Free and Starter plans use GeoLite2 (~37% city fill rate) which is still excellent for country-level use cases.</p>
+    </div>
+    <div class="faq-item">
+      <h4>How often is the data updated?</h4>
+      <p>GeoIP2 databases update daily (when MaxMind publishes new builds). GeoLite2 updates weekly. All updates happen automatically — zero action needed on your end.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Can I use this for commercial products?</h4>
+      <p>Absolutely. All IPGeo plans include commercial use. No additional license, no attribution required, no legal review needed. It's included in your subscription.</p>
+    </div>
+  </div>
+
+  <!-- ── CTA ── -->
+  <div class="cta-block">
+    <h2>Stop maintaining GeoIP infrastructure.</h2>
+    <p>Get MaxMind-quality data through a single API. Free for 10,000 queries/month.</p>
+    <a href="/signup?plan=free" class="btn btn-primary">Get Free API Key →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/pricing">Pricing</a> · <a href="/why-maxmind">Why Not MaxMind?</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+</footer>
+
+</body>
+</html>
