@@ -298,9 +298,10 @@ async def health():
     components["api"] = {"status": "operational", "detail": f"v{app.version}"}
 
     # 4. Risk detection
+    tor_count = len(risk._tor_exits) if risk._tor_exits else 0
     components["risk_detection"] = {
-        "status": "operational" if risk._tor_exit_nodes is not None else "degraded",
-        "detail": f"{len(risk._tor_exit_nodes)} Tor exits tracked" if risk._tor_exit_nodes else "Initializing",
+        "status": "operational" if risk._tor_available else "degraded",
+        "detail": f"{tor_count} Tor exits tracked" if risk._tor_available else "Initializing",
     }
 
     return {
