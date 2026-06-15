@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What Is My IP? — Instant IP & Geolocation Check | IPGeo</title>
+  <meta name="description" content="Check your IP address instantly. See your public IPv4/IPv6, country, city, ISP, and more. No signup needed.">
+  <meta property="og:title" content="What Is My IP? — Free IP Checker">
+  <meta property="og:description" content="See your public IP address, location, and ISP in one click. Powered by MaxMind GeoIP2 data.">
+  <meta name="keywords" content="what is my ip, my ip address, check my ip, my public ip, ip checker">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    nav a:hover { color: var(--text); }
+
+    h1 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .subtitle { color: var(--dim); margin-bottom: 32px; }
+
+    /* IP Display */
+    .ip-display {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(16,185,129,0.1));
+      border: 2px solid rgba(124,58,237,0.3); border-radius: 12px; padding: 32px;
+      text-align: center; margin-bottom: 32px;
+    }
+    .ip-display .your-ip {
+      font-size: 2.8rem; font-weight: 800; color: #fff;
+      font-family: 'Fira Code', monospace; word-break: break-all;
+    }
+    .ip-display .version {
+      display: inline-block; font-size: .7rem; padding: 3px 10px; border-radius: 12px;
+      margin-top: 8px; background: rgba(124,58,237,0.2); color: var(--accent);
+      text-transform: uppercase; letter-spacing: .06em; font-weight: 600;
+    }
+    .ip-display.loading .your-ip { color: var(--dim); font-size: 1.2rem; }
+    .ip-display .error-msg { color: #fca5a5; display: none; }
+    .ip-display .error-msg.active { display: block; }
+
+    /* Details */
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 48px; }
+    .result-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+    .result-item .label { color: var(--dim2); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .result-item .value { color: #fff; font-size: 1.1rem; font-weight: 600; word-break: break-all; }
+
+    .map-link { text-align: center; margin: -24px 0 32px; }
+    .map-link a { color: var(--accent); font-size: .85rem; text-decoration: none; }
+    .map-link a:hover { text-decoration: underline; }
+
+    /* CTA */
+    .cta-inline { background: linear-gradient(135deg, #1a1025, #0f0f1f); border: 1px solid var(--accent); border-radius: 10px; padding: 28px; margin: 40px 0; text-align: center; }
+    .cta-inline p { color: var(--dim); font-size: .9rem; margin-bottom: 12px; }
+    .btn { display: inline-block; padding: 12px 28px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; font-size: .9rem; text-decoration: none; }
+    .btn:hover { background: #6d28d9; }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--dim); font-size: .8rem; }
+    footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 500px) {
+      .ip-display .your-ip { font-size: 1.6rem; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="container">
+  <a href="/" class="logo">IP<span>Geo</span></a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<div class="container">
+  <h1>What Is My IP Address?</h1>
+  <p class="subtitle">Your public IP address and geolocation details. Detected automatically.</p>
+
+  <div class="ip-display loading" id="ip-display">
+    <div class="your-ip" id="my-ip">Detecting…</div>
+    <div class="version" id="ip-version"></div>
+    <div class="error-msg" id="error-msg">Unable to detect your IP. Please try refreshing the page.</div>
+  </div>
+
+  <div class="result-grid" id="result-grid"></div>
+
+  <div class="cta-inline">
+    <p><strong>Need to look up any IP address programmatically?</strong> 10,000 free API calls/month.</p>
+    <a href="/signup?plan=free" class="btn">Get Free API Key →</a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 IPGeo · <a href="/">Home</a> · <a href="/pricing">Pricing</a> · <a href="/ip-lookup">IP Lookup</a> · <a href="/my-ip">My IP</a></p>
+</footer>
+
+<script>
+var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
+function _track(event, extra) {
+  var p = {event: event, page: location.pathname};
+  if (extra) Object.assign(p, extra);
+  try { fetch(_ANALYTICS, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(p)}).catch(function(){}); } catch(e) {}
+}
+_track('page_view');
+
+var DEMO_KEY = 'ipgeo_7b0302ffc7799866da66e66feb9bd09203f28c14f229c72ee5481dc22a3ba902';
+
+(async function() {
+  var display = document.getElementById('ip-display');
+  var ipEl = document.getElementById('my-ip');
+  var verEl = document.getElementById('ip-version');
+  var errEl = document.getElementById('error-msg');
+
+  try {
+    var resp = await fetch('https://api.getipgeo.com/v1/ip/me', {
+      headers: { 'X-API-Key': DEMO_KEY }
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+
+    display.classList.remove('loading');
+    ipEl.textContent = data.ip;
+    if (data.ip && data.ip.includes(':')) {
+      verEl.textContent = 'IPv6';
+    } else {
+      verEl.textContent = 'IPv4';
+    }
+
+    renderResult(data);
+    _track('my_ip_lookup', {ip: data.ip});
+  } catch (e) {
+    display.classList.remove('loading');
+    errEl.classList.add('active');
+    ipEl.textContent = '—';
+  }
+})();
+
+function renderResult(d) {
+  var cc = (d.country && d.country.code) || '';
+  var flag = cc ? countryFlag(cc) : '';
+  var html = '';
+  var rows = [
+    {label: 'Country', value: flag + ' ' + (d.country ? d.country.name : '—') + ' (' + cc + ')'},
+    {label: 'City', value: d.city || '—'},
+    {label: 'Region', value: (d.subdivisions && d.subdivisions[0] && d.subdivisions[0].name) || '—'},
+    {label: 'Coordinates', value: d.latitude ? d.latitude.toFixed(4) + ', ' + d.longitude.toFixed(4) : '—'},
+    {label: 'Timezone', value: d.timezone || '—'},
+    {label: 'ISP', value: (d.network && d.network.isp) || '—'},
+    {label: 'ASN', value: (d.network && d.network.asn ? 'AS' + d.network.asn : '—')},
+    {label: 'Network', value: (d.network && d.network.network) || '—'},
+  ];
+  rows.forEach(function(r) {
+    html += '<div class="result-item"><div class="label">' + r.label + '</div><div class="value">' + r.value + '</div></div>';
+  });
+  document.getElementById('result-grid').innerHTML = html;
+}
+
+function countryFlag(cc) {
+  return String.fromCodePoint(0x1F1E6 + cc.charCodeAt(0) - 65, 0x1F1E6 + cc.charCodeAt(1) - 65);
+}
+</script>
+</body>
+</html>
