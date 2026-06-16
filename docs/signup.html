@@ -83,11 +83,6 @@
   onerror="console.warn('Paddle CDN blocked, trying VPS proxy...');var s=document.createElement('script');s.src='/paddle/v2/paddle.js';document.head.appendChild(s);">
 </script>
 <script>
-// ── Service Worker ──
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function(){});
-}
-
 // ── Analytics ──
 var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
 function _track(event, extra) {
@@ -102,7 +97,10 @@ Paddle.Environment.set('sandbox');
 Paddle.Initialize({
   token: 'test_4628f082aee9e3ced4587817bdf',
   eventCallback: function(event) {
-    console.log('Paddle event:', event.name, event);
+    console.log('Paddle event:', event.name, JSON.stringify(event.data || event, null, 2));
+    if (event.name === 'checkout.error') {
+      console.error('Paddle checkout error DETAILS:', event.data);
+    }
     if (event.name === 'checkout.completed') {
       var txnId = (event.data && event.data.id) || '';
       window.location.href = '/success?checkout_id=' + encodeURIComponent(txnId);
