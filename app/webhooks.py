@@ -197,64 +197,20 @@ async def _handle_payment_failed(data: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Checkout helpers (for generating Paddle checkout URLs from your backend)
+# Transaction verification helper
 # ---------------------------------------------------------------------------
 
 
-async def create_checkout(
-    user_id: str,
-    price_id: str,
-    customer_email: str,
-) -> dict:
+async def verify_transaction(transaction_id: str) -> Optional[dict]:
     """
-    Call the Paddle API to create a checkout and return the checkout data.
+    Query Paddle API for a transaction by ID.
 
-    This is the server-side flow: you create a checkout via Paddle's API,
-    then redirect the user to the returned URL.  When the transaction is
-    complete, Paddle fires the webhook.
-
-    https://developer.paddle.com/api-reference/checkout/create
-    """
-    import httpx
-
-    settings = get_settings()
-    url = f"{settings.paddle_api_url}/checkouts"
-
-    payload = {
-        "items": [{"price_id": price_id, "quantity": 1}],
-        "custom_data": {"user_id": user_id},
-        "customer": {"email": customer_email},
-        "settings": {
-            "success_url": f"https://getipgeo.com/success?checkout_id={{checkout_id}}",
-        },
-    }
-
-    headers = {
-        "Authorization": f"Bearer {settings.paddle_api_key}",
-        "Content-Type": "application/json",
-    }
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(url, json=payload, headers=headers)
-        result = resp.json()
-
-        if resp.status_code not in (200, 201):
-            logger.error("Paddle checkout error: %s", result)
-            raise RuntimeError(f"Paddle checkout failed: {result}")
-
-        return result["data"]
-
-
-async def verify_checkout(checkout_id: str) -> Optional[dict]:
-    """
-    Query Paddle API for a checkout's status.
-
-    Used after checkout redirect to verify the user completed payment
-    before issuing an API key.
+    Paddle.js checkout redirects with ``checkout_id`` or ``transaction_id``
+    in the URL. We use the Paddle Transactions API to verify payment status.
 
     Returns None if not found/error, otherwise:
         {
-            "status": "completed" | "draft" | "expired",
+            "status": "completed" | "billed" | "draft" | ...,
             "user_id": "...",        // from custom_data
             "email": "...",          // customer email
             "price_id": "...",       // plan identifier
@@ -263,60 +219,22 @@ async def verify_checkout(checkout_id: str) -> Optional[dict]:
     import httpx
 
     settings = get_settings()
-
-    # First try the checkout endpoint
-    check_url = f"{settings.paddle_api_url}/checkouts/{checkout_id}"
+    url = f"{settings.paddle_api_url}/transactions/{transaction_id}"
     headers = {
         "Authorization": f"Bearer {settings.paddle_api_key}",
         "Content-Type": "application/json",
     }
 
     async with httpx.AsyncClient() as client:
-        # Get checkout
-        resp = await client.get(check_url, headers=headers)
+        resp = await client.get(url, headers=headers)
         if resp.status_code != 200:
-            logger.warning("Paddle checkout lookup failed: %s %s", resp.status_code, resp.text[:200])
-            # Try transaction lookup as fallback (Paddle redirect uses transaction ID sometimes)
-            txn_resp = await client.get(
-                f"{settings.paddle_api_url}/transactions/{checkout_id}",
-                headers=headers,
-            )
-            if txn_resp.status_code != 200:
-                return None
-            txn_data = txn_resp.json().get("data", {})
-            return _parse_transaction(txn_data)
+            logger.warning("Paddle transaction lookup failed: %s %s",
+                           resp.status_code, resp.text[:200])
+            return None
 
         data = resp.json().get("data", {})
 
-    # Extract info from checkout response
-    custom = data.get("custom_data") or {}
-    customer = data.get("customer") or {}
-    items = data.get("items") or []
-    price_id = ""
-    if items:
-        price_id = (items[0].get("price") or {}).get("id", "")
-
-    # Check if there's a completed transaction
-    transaction_id = data.get("transaction_id", "")
-    status = data.get("status", "")
-
-    if status != "completed" and transaction_id:
-        # Verify via transaction endpoint
-        async with httpx.AsyncClient() as client:
-            txn_resp = await client.get(
-                f"{settings.paddle_api_url}/transactions/{transaction_id}",
-                headers=headers,
-            )
-            if txn_resp.status_code == 200:
-                txn_data = txn_resp.json().get("data", {})
-                return _parse_transaction(txn_data)
-
-    return {
-        "status": status,
-        "user_id": custom.get("user_id", ""),
-        "email": customer.get("email", ""),
-        "price_id": price_id,
-    }
+    return _parse_transaction(data)
 
 
 def _parse_transaction(txn: dict) -> dict:

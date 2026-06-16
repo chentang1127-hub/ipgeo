@@ -383,16 +383,17 @@ async def auth_claim_by_email(request: Request):
 @app.post("/v1/auth/register")
 async def auth_register(request: Request):
     """
-    Register a new user and get a Paddle checkout URL.
+    Register a new user before Paddle.js checkout.
 
     Request body:
         { "email": "user@example.com", "price_id": "pri_01kv2fyaj4ek50cxrbw7f332eh" }
 
     Response:
-        { "user_id": "...", "checkout_url": "https://buy.paddle.com/..." }
+        { "user_id": "...", "plan": "pro" }
 
-    Redirect the user to ``checkout_url``. After payment, Paddle will
-    redirect them to /success?checkout_id=xxx where they can claim their key.
+    The frontend then opens Paddle.Checkout.open() with the price_id
+    and custom_data.user_id. After payment, Paddle redirects to
+    /success?checkout_id=xxx where the user claims their key.
     """
     body = await request.json() or {}
 
@@ -413,29 +414,15 @@ async def auth_register(request: Request):
     # Check if user already exists by email
     existing_user_id = await auth.get_user_by_email(email)
     if existing_user_id:
-        # Existing user — create checkout with same user_id (plan upgrade)
         user_id = existing_user_id
     else:
-        # New user
         user_id = uuid.uuid4().hex[:16]
         await auth.store_user_email(user_id, email)
 
-    # Create Paddle checkout
-    checkout_data = await webhooks.create_checkout(
-        user_id=user_id,
-        price_id=price_id,
-        customer_email=email,
-    )
-
-    checkout_url = checkout_data.get("url") or checkout_data.get("checkout_url", "")
-    checkout_id = checkout_data.get("id", "")
-
-    logger.info("Registration: user=%s email=%s plan=%s checkout=%s", user_id, email, plan, checkout_id)
+    logger.info("Registration: user=%s email=%s plan=%s", user_id, email, plan)
 
     return {
         "user_id": user_id,
-        "checkout_url": checkout_url,
-        "checkout_id": checkout_id,
         "plan": plan,
     }
 
@@ -469,20 +456,20 @@ async def auth_claim(request: Request):
         logger.info("Claim: checkout=%s already claimed, returning cached key", checkout_id)
         return {"api_key": api_key, "plan": plan, "user_id": user_id}
 
-    # 1. Verify checkout with Paddle
-    checkout_info = await webhooks.verify_checkout(checkout_id)
-    if checkout_info is None:
-        raise HTTPException(400, detail="Checkout not found. It may take a moment — please retry.")
+    # 1. Verify transaction with Paddle
+    txn_info = await webhooks.verify_transaction(checkout_id)
+    if txn_info is None:
+        raise HTTPException(400, detail="Transaction not found. It may take a moment — please retry.")
 
-    if checkout_info.get("status") != "completed":
+    if txn_info.get("status") not in ("completed", "billed"):
         raise HTTPException(
             425,  # Too Early
-            detail=f"Payment not yet completed (status: {checkout_info['status']}). "
+            detail=f"Payment not yet completed (status: {txn_info['status']}). "
                    "Please retry after the payment processes.",
         )
 
-    user_id = checkout_info.get("user_id", "")
-    paddle_price_id = checkout_info.get("price_id", "")
+    user_id = txn_info.get("user_id", "")
+    paddle_price_id = txn_info.get("price_id", "")
     plan = settings.paddle_price_plan_map.get(paddle_price_id, "free")
 
     if not user_id:
@@ -495,7 +482,7 @@ async def auth_claim(request: Request):
     else:
         await billing.set_plan(user_id, plan)
         # Also store email from checkout
-        email = checkout_info.get("email", "")
+        email = txn_info.get("email", "")
         if email:
             await auth.store_user_email(user_id, email)
         logger.info("Claim: user=%s provisioned as plan=%s", user_id, plan)
