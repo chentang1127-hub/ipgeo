@@ -206,7 +206,7 @@ async function handleSubmit() {
       settings: {
         displayMode: 'overlay',
         theme: 'dark',
-        successUrl: 'https://getipgeo.com/success',
+        successUrl: 'https://getipgeo.com/success?checkout_id={checkout_id}',
       },
     });
   } catch (e) {
