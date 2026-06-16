@@ -42,10 +42,10 @@ class Settings(BaseSettings):
     # Paddle price ID → IPGeo plan mapping
     # Create prices in Paddle dashboard, then paste their IDs here.
     paddle_price_plan_map: dict[str, str] = {
-        "pri_01kv753sk1wzebfa479gjtn3wa": "free",
-        "pri_01kv756stsr32sg1jxkc0gd905": "starter",
-        "pri_01kv7585xg3psf5bpbkpqh6hda": "pro",
-        "pri_01kv759mjz9q8zt34gngj7zda0": "business",
+        "pri_01kv2fm7b7y2bwptwjeyq6gt36": "free",
+        "pri_01kv2fsash4j8ed9m2swmbst7z": "starter",
+        "pri_01kv2fyaj4ek50cxrbw7f332eh": "pro",
+        "pri_01kv2g0mdbeze07k2rqdcqykse": "business",
     }
 
     @property
