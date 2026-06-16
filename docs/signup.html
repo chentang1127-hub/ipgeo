@@ -90,20 +90,17 @@ function _track(event, extra) {
 }
 _track('page_view');
 
-let paddle = null;
 Paddle.Environment.set('sandbox');
 Paddle.Initialize({
   token: 'test_e7d0c31d18dd3a1dfb84847bacd',
-  checkout: { settings: { displayMode: 'overlay', theme: 'dark' } },
   eventCallback: function(event) {
     if (event.name === 'checkout.closed') {
-      // Re-enable button if user cancels checkout
       var btn = document.getElementById('submit');
       btn.classList.remove('loading');
       btn.disabled = false;
     }
   },
-}).then(function(instance) { paddle = instance; });
+});
 
 let selectedPlan = 'pro';
 let selectedPriceId = 'pri_01kv7585xg3psf5bpbkpqh6hda';
@@ -188,20 +185,16 @@ async function handleSubmit() {
     const data = await resp.json();
 
     // Open Paddle checkout overlay
-    if (paddle) {
-      paddle.Checkout.open({
-        items: [{ priceId: selectedPriceId, quantity: 1 }],
-        customer: { email: email },
-        customData: { user_id: data.user_id },
-        settings: {
-          displayMode: 'overlay',
-          theme: 'dark',
-          successUrl: 'https://getipgeo.com/success?checkout_id={checkout_id}',
-        },
-      });
-    } else {
-      throw new Error('Paddle checkout not available. Please refresh and try again.');
-    }
+    Paddle.Checkout.open({
+      items: [{ priceId: selectedPriceId, quantity: 1 }],
+      customer: { email: email },
+      customData: { user_id: data.user_id },
+      settings: {
+        displayMode: 'overlay',
+        theme: 'dark',
+        successUrl: 'https://getipgeo.com/success?checkout_id={checkout_id}',
+      },
+    });
   } catch (e) {
     showError(e.message || 'Something went wrong. Please try again.');
     btn.classList.remove('loading');
