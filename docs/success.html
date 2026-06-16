@@ -101,55 +101,94 @@ async function main() {
     }
   }
 
+  // Auto-claim flow: try stored email from sessionStorage (no manual typing)
+  const storedEmail = sessionStorage.getItem('ipgeo_email');
   if (!checkoutId || checkoutId === '{checkout_id}') {
-    // No checkout_id, or Paddle didn't replace the template — show email claim fallback
+    if (storedEmail) {
+      // Auto-poll claim-by-email (webhook may not have fired yet)
+      var polled = await pollClaimByEmail(storedEmail);
+      if (polled) return;
+      // If polling exhausted, fall through to manual form
+    }
     showEmailFallback();
     return;
   }
 
-  // Poll the claim endpoint (payment may take a moment to process)
-  let attempts = 0;
-  const maxAttempts = 30;
-  const pollInterval = 2000; // 2 seconds
+  // Have checkout_id — poll the claim endpoint
+  await pollClaimById(checkoutId);
+}
 
-  while (attempts < maxAttempts) {
+async function pollClaimByEmail(email) {
+  var maxAttempts = 15;
+  var pollInterval = 2000;
+  for (var i = 0; i < maxAttempts; i++) {
     try {
-      const resp = await fetch('https://api.getipgeo.com/v1/auth/claim', {
+      var resp = await fetch('https://api.getipgeo.com/v1/auth/claim-by-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email }),
+      });
+      if (resp.ok) {
+        var data = await resp.json();
+        showResult(data.api_key, data.plan);
+        sessionStorage.removeItem('ipgeo_email');
+        sessionStorage.removeItem('ipgeo_user_id');
+        return true;
+      }
+      if (resp.status === 404) {
+        // Webhook hasn't fired yet — wait and retry
+        document.getElementById('stepHint').style.display = 'block';
+        document.getElementById('stepText').textContent =
+          'Waiting for payment confirmation… (' + (i + 1) + '/' + maxAttempts + ')';
+        await new Promise(function(r) { setTimeout(r, pollInterval); });
+        continue;
+      }
+      // Other error — stop
+      var err = await resp.json();
+      showError(err.detail || 'Failed to claim API key');
+      return false;
+    } catch(e) {
+      if (i < maxAttempts - 1) {
+        await new Promise(function(r) { setTimeout(r, pollInterval); });
+      }
+    }
+  }
+  // Exhausted — fall through to manual
+  return false;
+}
+
+async function pollClaimById(checkoutId) {
+  var maxAttempts = 30;
+  var pollInterval = 2000;
+  for (var i = 0; i < maxAttempts; i++) {
+    try {
+      var resp = await fetch('https://api.getipgeo.com/v1/auth/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ checkout_id: checkoutId }),
       });
-
       if (resp.ok) {
-        const data = await resp.json();
+        var data = await resp.json();
         showResult(data.api_key, data.plan);
         return;
       }
-
       if (resp.status === 425) {
-        // Payment still processing — retry
         document.getElementById('stepHint').style.display = 'block';
         document.getElementById('stepText').textContent =
-          `Waiting for payment confirmation… (attempt ${attempts + 1}/${maxAttempts})`;
-        attempts++;
-        await new Promise(r => setTimeout(r, pollInterval));
+          'Waiting for payment confirmation… (' + (i + 1) + '/' + maxAttempts + ')';
+        await new Promise(function(r) { setTimeout(r, pollInterval); });
         continue;
       }
-
-      // Other error
-      const err = await resp.json();
+      var err = await resp.json();
       throw new Error(err.detail || 'Failed to claim API key');
-    } catch (e) {
-      if (e.message && !e.message.includes('Failed to fetch')) {
+    } catch(e) {
+      if (e.message && e.message.indexOf('Failed to fetch') === -1) {
         showError(e.message);
         return;
       }
-      // Network error — retry
-      attempts++;
-      await new Promise(r => setTimeout(r, pollInterval));
+      await new Promise(function(r) { setTimeout(r, pollInterval); });
     }
   }
-
   showError('Payment verification timed out. Your key may already be ready — check your email or contact support.');
   showEmailFallback();
 }
@@ -171,44 +210,36 @@ function showResult(apiKey, plan) {
 function showEmailFallback() {
   document.getElementById('spinner').style.display = 'none';
   document.getElementById('title').textContent = 'Claim Your Key';
-  document.getElementById('status').innerHTML = `
-    <form id="claimForm" onsubmit="claimByEmail(event)" style="margin-top:16px;">
-      <input type="email" id="emailInput" placeholder="you@example.com" required
-        style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.95rem;margin-bottom:12px;">
-      <button type="submit"
-        style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.9rem;">
-        Look Up My Key
-      </button>
-    </form>
-  `;
+  var storedEmail = sessionStorage.getItem('ipgeo_email') || '';
+  document.getElementById('status').innerHTML =
+    '<form id="claimForm" onsubmit="claimByEmail(event)" style="margin-top:16px;">' +
+      '<input type="email" id="emailInput" placeholder="you@example.com" required value="' + escapeHtml(storedEmail) + '"' +
+        'style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.95rem;margin-bottom:12px;">' +
+      '<button type="submit"' +
+        'style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.9rem;">' +
+        'Look Up My Key' +
+      '</button>' +
+    '</form>';
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 async function claimByEmail(e) {
   e.preventDefault();
-  const email = document.getElementById('emailInput').value.trim();
+  var email = document.getElementById('emailInput').value.trim();
   if (!email) return;
 
   document.getElementById('error').style.display = 'none';
   document.getElementById('spinner').style.display = 'block';
+  document.getElementById('stepHint').style.display = 'block';
+  document.getElementById('stepText').textContent = 'Looking up your account…';
 
-  try {
-    // Re-register with the same email to get a checkout URL
-    // (or use a dedicated email-claim endpoint)
-    const resp = await fetch('https://api.getipgeo.com/v1/auth/claim-by-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      showResult(data.api_key, data.plan);
-      return;
-    }
-    const err = await resp.json();
-    showError(err.detail || 'No API key found for this email. Please complete your purchase first.');
-  } catch (ex) {
-    showError('Something went wrong. Please contact support.');
-  }
+  // Use polling — webhook might not have fired yet
+  await pollClaimByEmail(email);
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('stepHint').style.display = 'none';
 }
 
 function showError(msg) {

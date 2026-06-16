@@ -203,6 +203,10 @@ async function handleSubmit() {
 
     console.log('Opening Paddle checkout for user:', data.user_id, 'price:', selectedPriceId);
 
+    // Store email so success page can auto-claim without typing again
+    sessionStorage.setItem('ipgeo_email', email);
+    sessionStorage.setItem('ipgeo_user_id', data.user_id);
+
     // Open Paddle checkout overlay
     Paddle.Checkout.open({
       items: [{ priceId: selectedPriceId, quantity: 1 }],
