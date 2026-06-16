@@ -102,8 +102,13 @@ Paddle.Initialize({
       console.error('Paddle checkout error DETAILS:', event.data);
     }
     if (event.name === 'checkout.completed') {
+      // Paddle Billing doesn't support {checkout_id} template in successUrl.
+      // We grab the transaction ID from the event and redirect manually.
       var txnId = (event.data && event.data.id) || '';
-      window.location.href = '/success?checkout_id=' + encodeURIComponent(txnId);
+      console.log('Checkout completed! Full event data:', JSON.stringify(event.data));
+      if (txnId) {
+        window.location.href = '/success?checkout_id=' + encodeURIComponent(txnId);
+      }
     }
     if (event.name === 'checkout.closed') {
       var btn = document.getElementById('submit');
@@ -206,7 +211,7 @@ async function handleSubmit() {
       settings: {
         displayMode: 'overlay',
         theme: 'dark',
-        successUrl: 'https://getipgeo.com/success?checkout_id={checkout_id}',
+        successUrl: 'https://getipgeo.com/success',
       },
     });
   } catch (e) {
