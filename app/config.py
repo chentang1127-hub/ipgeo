@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     paddle_webhook_secret: str = ""
     paddle_sandbox: bool = True  # True = Paddle sandbox, False = live
 
+    # RapidAPI marketplace
+    rapidapi_proxy_secret: str = ""   # From RapidAPI Provider Dashboard → API settings
+    rapidapi_enabled: bool = False    # Master switch for RapidAPI integration
+
     # Paddle price ID → IPGeo plan mapping
     # Create prices in Paddle dashboard, then paste their IDs here.
     paddle_price_plan_map: dict[str, str] = {

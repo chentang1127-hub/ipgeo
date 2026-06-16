@@ -101,10 +101,15 @@ async def get_balance(user_id: str) -> int:
     return int(await redis.get(f"ipgeo:user:{user_id}:credits") or 0)
 
 
-async def get_usage(user_id: str) -> dict:
-    """Return current month's usage snapshot."""
+async def get_usage(user_id: str, plan: str = None) -> dict:
+    """Return current month's usage snapshot.
+
+    Accepts an optional `plan` override (for RapidAPI users whose plan
+    comes from X-RapidAPI-Subscription rather than the database).
+    """
     redis = get_redis()
-    plan = await redis.get(f"ipgeo:user:{user_id}:plan") or "free"
+    if plan is None:
+        plan = await redis.get(f"ipgeo:user:{user_id}:plan") or "free"
     month_str = datetime.now(timezone.utc).strftime("%Y-%m")
     used = int(await redis.get(f"ipgeo:user:{user_id}:usage:{month_str}") or 0)
     credits = await get_balance(user_id)

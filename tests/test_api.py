@@ -412,3 +412,107 @@ class TestCORS:
         )
         assert resp.status_code == 200
         assert "access-control-allow-origin" in resp.headers
+
+
+# ---------------------------------------------------------------------------
+# RapidAPI marketplace integration
+# ---------------------------------------------------------------------------
+
+RAPIDAPI_SECRET = "test-rapidapi-secret"
+RAPIDAPI_HEADERS = {
+    "X-RapidAPI-Proxy-Secret": RAPIDAPI_SECRET,
+    "X-RapidAPI-User": "test-rapidapi-user-123",
+    "X-RapidAPI-Subscription": "PRO",
+}
+
+
+class TestRapidAPI:
+    """Tests for RapidAPI marketplace integration."""
+
+    # -- Auth -----------------------------------------------------------
+
+    async def test_valid_rapidapi_request_succeeds(self, client: AsyncClient):
+        """A request with correct proxy secret should work without X-API-Key."""
+        resp = await client.get(
+            "/v1/ip/8.8.8.8",
+            headers=RAPIDAPI_HEADERS,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ip"] == "8.8.8.8"
+
+    async def test_bad_proxy_secret_returns_401(self, client: AsyncClient):
+        """Wrong proxy secret must be rejected."""
+        headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Proxy-Secret": "wrong-secret"}
+        resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
+        assert resp.status_code == 401
+
+    async def test_no_rapidapi_headers_falls_through_to_key_auth(self, client: AsyncClient):
+        """Without RapidAPI headers, normal X-API-Key auth must still be required."""
+        resp = await client.get("/v1/ip/8.8.8.8")
+        assert resp.status_code == 401
+        assert resp.json()["error"] == "unauthorized"
+
+    # -- Subscription mapping ------------------------------------------
+
+    async def test_free_subscription_maps_to_free_plan(self, client: AsyncClient):
+        """FREE → free (GeoLite2 data)."""
+        headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "FREE"}
+        resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
+        assert resp.status_code == 200
+
+    async def test_basic_subscription_maps_to_starter(self, client: AsyncClient):
+        """BASIC → starter."""
+        headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "BASIC"}
+        resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
+        assert resp.status_code == 200
+
+    async def test_pro_subscription_maps_to_pro(self, client: AsyncClient):
+        """PRO → pro (GeoIP2 data when available)."""
+        resp = await client.get("/v1/ip/8.8.8.8", headers=RAPIDAPI_HEADERS)
+        assert resp.status_code == 200
+
+    async def test_ultra_subscription_maps_to_business(self, client: AsyncClient):
+        """ULTRA → business."""
+        headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "ULTRA"}
+        resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
+        assert resp.status_code == 200
+
+    async def test_mega_subscription_maps_to_enterprise(self, client: AsyncClient):
+        """MEGA → enterprise (unmetered)."""
+        headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "MEGA"}
+        resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
+        assert resp.status_code == 200
+
+    async def test_unknown_subscription_defaults_to_free(self, client: AsyncClient):
+        """Unknown subscription tier falls back to 'free'."""
+        headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "WEIRD_TIER"}
+        resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
+        assert resp.status_code == 200
+        # Uses free plan limits — should still work, just with GeoLite2 data
+
+    # -- Rate limit + billing ------------------------------------------
+
+    async def test_rapidapi_user_uses_separate_quota(self, client: AsyncClient):
+        """RapidAPI users have their own quota bucket (prefixed 'rapidapi:')."""
+        resp = await client.get(
+            "/v1/usage",
+            headers=RAPIDAPI_HEADERS,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["plan"] == "pro"
+
+    # -- Non-API endpoints ---------------------------------------------
+
+    async def test_health_endpoint_ignores_rapidapi_headers(self, client: AsyncClient):
+        """Health check should work regardless of RapidAPI headers."""
+        resp = await client.get("/v1/health", headers=RAPIDAPI_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "healthy"
+
+    async def test_metrics_ignores_rapidapi_headers(self, client: AsyncClient):
+        """Metrics should work regardless of RapidAPI headers."""
+        resp = await client.get("/metrics", headers=RAPIDAPI_HEADERS)
+        assert resp.status_code == 200
+        assert "ipgeo" in resp.text

@@ -70,11 +70,23 @@ async def authenticate(request: Request) -> dict:
     """
     FastAPI dependency: extract and validate API key.
 
+    RapidAPI requests are authenticated via X-RapidAPI-Proxy-Secret
+    (verified upstream by rapidapi_middleware) — skip the X-API-Key
+    check and use the identity attached to request.state.
+
     Usage:
         @app.get("/v1/ip/{ip}")
         async def lookup(ip: str, user = Depends(authenticate)):
             ...
     """
+    # RapidAPI: identity was already validated by the middleware
+    if getattr(request.state, "is_rapidapi", False):
+        return {
+            "id": request.state.rapidapi_user_id,
+            "plan": request.state.rapidapi_plan,
+            "source": "rapidapi",
+        }
+
     api_key = (
         request.headers.get(AUTH_HEADER)
         or request.query_params.get("api_key")

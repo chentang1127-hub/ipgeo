@@ -32,6 +32,7 @@ from . import billing
 from .billing import PLAN_QUOTAS
 from . import metrics as m
 from . import ratelimit
+from . import rapidapi
 from . import risk
 from . import webhooks
 
@@ -109,6 +110,7 @@ app.add_middleware(
     allow_headers=["X-API-Key", "Content-Type"],
 )
 app.add_middleware(MetricsMiddleware)
+app.add_middleware(rapidapi.RapidAPIMiddleware)
 
 # ---------------------------------------------------------------------------
 # Endpoints
@@ -268,7 +270,7 @@ async def get_usage(user: dict = Depends(auth.authenticate)):
     curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/usage
     ```
     """
-    return await billing.get_usage(user["id"])
+    return await billing.get_usage(user["id"], user.get("plan"))
 
 
 @app.get("/v1/health")
