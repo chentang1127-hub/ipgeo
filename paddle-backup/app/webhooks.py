@@ -25,7 +25,7 @@ def verify_signature(raw_body: bytes, signature: str, secret: str) -> bool:
     Verify Paddle webhook signature.
 
     Paddle signs the raw request body with HMAC-SHA256 using the webhook secret.
-    The ``Paddle-Signature`` header contains ``ts={timestamp};h1={hmac_hex}``.
+    The `Paddle-Signature` header contains `ts={timestamp};h1={hmac_hex}`.
     """
     if not signature or not secret:
         return False
@@ -93,6 +93,7 @@ async def _handle_transaction_completed(data: dict) -> None:
     for item in items:
         price_data = item.get("price") or {}
         price_id = price_data.get("id", "")
+        product_id = price_data.get("product_id", "")
 
         # Try to map price → plan
         settings = get_settings()
@@ -255,9 +256,9 @@ async def verify_checkout(checkout_id: str) -> Optional[dict]:
     Returns None if not found/error, otherwise:
         {
             "status": "completed" | "draft" | "expired",
-            "user_id": "...",        // from custom_data
-            "email": "...",          // customer email
-            "price_id": "...",       // plan identifier
+            "user_id": "...",        # from custom_data
+            "email": "...",          # customer email
+            "price_id": "...",       # plan identifier
         }
     """
     import httpx

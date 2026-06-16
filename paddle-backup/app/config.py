@@ -40,7 +40,6 @@ class Settings(BaseSettings):
     paddle_sandbox: bool = True  # True = Paddle sandbox, False = live
 
     # Paddle price ID → IPGeo plan mapping
-    # Create prices in Paddle dashboard, then paste their IDs here.
     paddle_price_plan_map: dict[str, str] = {
         "pri_01kv2fm7b7y2bwptwjeyq6gt36": "free",
         "pri_01kv2fsash4j8ed9m2swmbst7z": "starter",

@@ -10,7 +10,6 @@ Endpoints:
 """
 
 import ipaddress
-import json
 import logging
 import time
 import uuid
@@ -321,7 +320,7 @@ async def health():
 @app.post("/v1/auth/register-free")
 async def auth_register_free(request: Request):
     """
-    Register a free plan user directly (no checkout needed).
+    Register a free plan user directly (no Paddle checkout needed).
 
     Request body:
         { "email": "user@example.com" }
@@ -391,7 +390,7 @@ async def auth_register(request: Request):
     Response:
         { "user_id": "...", "checkout_url": "https://buy.paddle.com/..." }
 
-    Redirect the user to ``checkout_url``. After payment, Paddle will
+    Redirect the user to `checkout_url`. After payment, Paddle will
     redirect them to /success?checkout_id=xxx where they can claim their key.
     """
     body = await request.json() or {}

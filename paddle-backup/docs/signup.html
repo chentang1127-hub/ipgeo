@@ -140,7 +140,7 @@ async function handleSubmit() {
 
   try {
     if (selectedPlan === 'free') _track('signup_complete', {plan: 'free'});
-    // Free plan — skip checkout, create key directly
+    // Free plan — skip Paddle, create key directly
     if (selectedPlan === 'free') {
       const resp = await fetch('https://api.getipgeo.com/v1/auth/register-free', {
         method: 'POST',
@@ -170,7 +170,7 @@ async function handleSubmit() {
       throw new Error(err.detail || 'Registration failed');
     }
     const data = await resp.json();
-    // Redirect to Lemon Squeezy checkout
+    // Redirect to Paddle
     window.location.href = data.checkout_url;
   } catch (e) {
     showError(e.message || 'Something went wrong. Please try again.');
