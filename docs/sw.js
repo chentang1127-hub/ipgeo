@@ -2,11 +2,12 @@
 // cdn.paddle.com, sandbox-api.paddle.com, etc. are inaccessible from China
 
 const PROXY_MAP = [
-  { host: 'cdn.paddle.com',             proxy: '/paddle/' },
-  { host: 'sandbox-api.paddle.com',     proxy: '/paddle-api/' },
-  { host: 'sandbox-checkout.paddle.com', proxy: '/paddle-checkout/' },
-  { host: 'api.paddle.com',             proxy: '/paddle-api/' },
-  { host: 'checkout.paddle.com',        proxy: '/paddle-checkout/' },
+  { host: 'cdn.paddle.com',              proxy: '/paddle/' },
+  { host: 'sandbox-cdn.paddle.com',      proxy: '/paddle-cdn/' },
+  { host: 'sandbox-api.paddle.com',      proxy: '/paddle-api/' },
+  { host: 'sandbox-checkout.paddle.com',  proxy: '/paddle-checkout/' },
+  { host: 'api.paddle.com',              proxy: '/paddle-api/' },
+  { host: 'checkout.paddle.com',         proxy: '/paddle-checkout/' },
 ];
 
 self.addEventListener('fetch', event => {
