@@ -79,8 +79,12 @@
   </div>
 </div>
 
-<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
+// ── Service Worker: proxy Paddle domains through getipgeo.com ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+
 // ── Analytics ──
 var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
 function _track(event, extra) {
@@ -89,7 +93,10 @@ function _track(event, extra) {
   try { fetch(_ANALYTICS, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)}).catch(function(){}); } catch(e) {}
 }
 _track('page_view');
+</script>
 
+<script src="/paddle/v2/paddle.js"></script>
+<script>
 Paddle.Environment.set('sandbox');
 Paddle.Initialize({
   token: 'test_4628f082aee9e3ced4587817bdf',
