@@ -294,25 +294,30 @@ class GeoReader:
         from .risk import HOSTING_ASNS
         net_type = "hosting" if (asn_num is not None and asn_num in HOSTING_ASNS) else None
 
+        # Always include location — fall back to XX country when unknown
+        loc = _maybe({
+            "country": _maybe({
+                "code": country.get("iso_code"),
+                "name": country.get("names", {}).get("en"),
+            }),
+            "continent": _maybe({
+                "code": continent.get("code"),
+                "name": continent.get("names", {}).get("en"),
+            }),
+            "city": city.get("city", {}).get("names", {}).get("en"),
+            "region": subdivisions[0].get("names", {}).get("en") if subdivisions else None,
+            "postal_code": city.get("postal", {}).get("code"),
+            "latitude": location.get("latitude"),
+            "longitude": location.get("longitude"),
+            "accuracy_km": location.get("accuracy_radius"),
+            "timezone": location.get("time_zone"),
+        })
+        if loc is None:
+            loc = {"country": {"code": "XX", "name": "Unknown"}, "city": None}
+
         result = {
             "ip": ip,
-            "location": _maybe({
-                "country": _maybe({
-                    "code": country.get("iso_code"),
-                    "name": country.get("names", {}).get("en"),
-                }),
-                "continent": _maybe({
-                    "code": continent.get("code"),
-                    "name": continent.get("names", {}).get("en"),
-                }),
-                "city": city.get("city", {}).get("names", {}).get("en"),
-                "region": subdivisions[0].get("names", {}).get("en") if subdivisions else None,
-                "postal_code": city.get("postal", {}).get("code"),
-                "latitude": location.get("latitude"),
-                "longitude": location.get("longitude"),
-                "accuracy_km": location.get("accuracy_radius"),
-                "timezone": location.get("time_zone"),
-            }),
+            "location": loc,
             "network": _maybe({
                 "isp": asn.get("autonomous_system_organization"),
                 "asn": asn_num,
