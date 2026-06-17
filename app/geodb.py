@@ -185,15 +185,16 @@ class GeoReader:
 
         ip_str = str(ip_obj)
 
+        # Always use best available: GeoIP2 > GeoLite2
+        use_geoip2 = self._has_geoip2
+
         # 3. Private / reserved
         if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved:
             result = self._build_private_result(ip_str, plan, use_geoip2)
             self._cache_put(cache_key, result)
             return result
 
-        # 4. ALWAYS use best available: GeoIP2 > GeoLite2
-        use_geoip2 = self._has_geoip2
-
+        # 4. Database lookup
         city_data = {}
         with self._lock:
             try:
