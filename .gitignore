@@ -9,3 +9,6 @@ venv/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+1/
+gen_spotlights.py
+spotlight-*
