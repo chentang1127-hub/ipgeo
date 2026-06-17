@@ -42,12 +42,12 @@ from .config import get_settings
 logger = logging.getLogger(__name__)
 
 # RapidAPI subscription tier → IPGeo plan
+# RapidAPI Studio uses standard tier names: BASIC / PRO / ULTRA / MEGA / ENTERPRISE
 SUBSCRIPTION_PLAN_MAP = {
-    "FREE":       "free",
-    "BASIC":      "starter",
-    "PRO":        "pro",
-    "ULTRA":      "business",
-    "MEGA":       "enterprise",
+    "BASIC":      "free",
+    "PRO":        "starter",
+    "ULTRA":      "pro",
+    "MEGA":       "business",
     "ENTERPRISE": "enterprise",
 }
 

@@ -1,6 +1,6 @@
 openapi: "3.0.3"
 info:
-  title: "IPGeo — IP Geolocation API"
+  title: "IPGeo"
   description: |
     ## IP geolocation with built-in security detection.
 
@@ -13,10 +13,10 @@ info:
 
     | Plan | Price | Lookups/mo | Rate/min |
     |------|-------|------------|----------|
-    | FREE | $0 | 10,000 | 60 |
-    | STARTER | $9 | 100,000 | 600 |
-    | PRO | $29 | 500,000 | 3,000 |
-    | BUSINESS | $79 | 1,000,000 | 10,000 |
+    | BASIC | $0 | 10,000 | 60 |
+    | PRO | $9 | 100,000 | 600 |
+    | ULTRA | $29 | 500,000 | 3,000 |
+    | MEGA | $79 | 1,000,000 | 10,000 |
 
     **Response grouped by use case** — `location`, `network`, `security`, `meta`
     blocks so you find what you need in one glance.
