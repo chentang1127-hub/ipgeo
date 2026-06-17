@@ -31,17 +31,17 @@ class TestGeoReader:
         result = reader.lookup("8.8.8.8")
         assert result["ip"] == "8.8.8.8"
         # Google's DNS is in the US
-        assert result.get("country", {}).get("code") == "US"
+        assert result["location"]["country"]["code"] == "US"
 
     def test_private_ip(self, reader):
         result = reader.lookup("192.168.1.1")
-        assert result["country"]["code"] == "XX"
-        assert result["city"] is None
+        assert result["location"]["country"]["code"] == "XX"
+        assert result["location"]["city"] is None
 
     def test_ipv6(self, reader):
         result = reader.lookup("2001:4860:4860::8888")
         assert "ip" in result
-        assert result.get("country", {}).get("code") is not None
+        assert result["location"]["country"]["code"] is not None
 
     def test_invalid_ip(self, reader):
         result = reader.lookup("not-an-ip")
@@ -54,6 +54,6 @@ class TestGeoReader:
 
     def test_returned_keys(self, reader):
         result = reader.lookup("8.8.8.8")
-        expected_keys = {"ip", "country", "latitude", "longitude", "timezone"}
+        expected_keys = {"ip", "location", "network", "security", "meta"}
         missing = expected_keys - set(result.keys())
         assert not missing, f"Missing keys: {missing}"

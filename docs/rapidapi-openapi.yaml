@@ -1,0 +1,538 @@
+openapi: "3.0.3"
+info:
+  title: "IPGeo — IP Geolocation API"
+  description: |
+    ## IP geolocation with built-in security detection.
+
+    **Why IPGeo?**
+
+    - **Security flags included** — VPN, proxy, Tor, hosting detection on every plan
+    - **10,000 free lookups/month** — enough for a full project PoC
+    - **MaxMind-powered** — the same data engine used by Cloudflare, npm, and Cisco
+    - **<1ms response** — mmap-backed local database, not a proxied upstream API
+
+    | Plan | Price | Lookups/mo | Rate/min |
+    |------|-------|------------|----------|
+    | FREE | $0 | 10,000 | 60 |
+    | STARTER | $9 | 100,000 | 600 |
+    | PRO | $29 | 500,000 | 3,000 |
+    | BUSINESS | $79 | 1,000,000 | 10,000 |
+
+    **Response grouped by use case** — `location`, `network`, `security`, `meta`
+    blocks so you find what you need in one glance.
+
+    **Works great for:**
+    - 🌍 Geo-targeted advertising & content localization
+    - 🛡️ Fraud detection & risk assessment
+    - 📊 Analytics & user segmentation
+    - 🔐 Access control & compliance (GDPR, licensing)
+
+    [Website](https://getipgeo.com) · [Docs](https://getipgeo.com/docs) · [Pricing](https://getipgeo.com/pricing)
+  version: "0.2.0"
+  contact:
+    name: "IPGeo Support"
+    url: "https://getipgeo.com"
+    email: "support@getipgeo.com"
+
+servers:
+  - url: "https://api.getipgeo.com"
+    description: "IPGeo API server"
+
+tags:
+  - name: "IP Lookup"
+    description: "Geolocation and network data for IP addresses"
+  - name: "Usage"
+    description: "Check your current billing period usage"
+  - name: "Health"
+    description: "API health and uptime status"
+
+security:
+  - RapidAPIKey: []
+
+paths:
+  # ------------------------------------------------------------------
+  # GET /v1/ip/{ip}
+  # ------------------------------------------------------------------
+  /v1/ip/{ip}:
+    get:
+      tags: ["IP Lookup"]
+      summary: "Look up a single IP address"
+      description: |
+        Returns geolocation, network info, and security flags for any IPv4 or IPv6 address.
+
+        **Response is grouped into four blocks:**
+        - `location` — country, city, coordinates, timezone, accuracy
+        - `network` — ISP, ASN, network type
+        - `security` — boolean detection flags (VPN, proxy, Tor, hosting)
+        - `meta` — data source and upgrade hints
+
+        Use `?fields=location,security` to select only the blocks you need.
+      operationId: lookupIp
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          description: "IPv4 or IPv6 address to look up"
+          schema:
+            type: string
+            examples: ["8.8.8.8", "2001:4860:4860::8888", "1.1.1.1"]
+        - name: fields
+          in: query
+          required: false
+          description: |
+            Comma-separated return fields. Can be top-level group names
+            (`location`, `network`, `security`, `meta`) or common field
+            names (`country`, `city`, `isp`, `is_tor`, etc.).
+            Example: `?fields=country,city,isp` → location + network blocks.
+          schema:
+            type: string
+            example: "location,security"
+      responses:
+        "200":
+          description: "Successful lookup"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IpLookupResponse"
+              examples:
+                google-dns:
+                  summary: "Google DNS (clean)"
+                  value:
+                    ip: "8.8.8.8"
+                    location:
+                      country: { code: "US", name: "United States" }
+                      continent: { code: "NA", name: "North America" }
+                      city: "Mountain View"
+                      region: "California"
+                      postal_code: "94043"
+                      latitude: 37.4223
+                      longitude: -122.0842
+                      accuracy_km: 10
+                      timezone: "America/Los_Angeles"
+                    network:
+                      isp: "Google LLC"
+                      asn: 15169
+                      type: "hosting"
+                    security:
+                      is_tor: false
+                      is_vpn: false
+                      is_proxy: false
+                      is_hosting: true
+                    meta:
+                      data_source: "MaxMind"
+                      upgrade:
+                        risk_scoring: "Get risk_score, confidence, and abuse reports on Pro+"
+                        learn_more: "https://getipgeo.com/risk"
+                linode-vpn:
+                  summary: "Linode VPN (suspicious)"
+                  value:
+                    ip: "45.33.32.156"
+                    location:
+                      country: { code: "US", name: "United States" }
+                      city: "Dallas"
+                      region: "Texas"
+                      latitude: 32.7831
+                      longitude: -96.8067
+                      accuracy_km: 20
+                      timezone: "America/Chicago"
+                    network:
+                      isp: "Akamai Technologies"
+                      asn: 63949
+                      type: "hosting"
+                    security:
+                      is_tor: false
+                      is_vpn: false
+                      is_proxy: false
+                      is_hosting: true
+                    meta:
+                      data_source: "MaxMind"
+        "400":
+          description: "Invalid IP address"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                detail: "Invalid IP address: not-an-ip"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+      x-code-samples:
+        - lang: "curl"
+          source: |
+            curl -H "X-RapidAPI-Key: YOUR_KEY" \
+              "https://api.getipgeo.com/v1/ip/8.8.8.8"
+        - lang: "Python"
+          source: |
+            import requests
+
+            url = "https://api.getipgeo.com/v1/ip/8.8.8.8"
+            headers = {"X-RapidAPI-Key": "YOUR_KEY"}
+            resp = requests.get(url, headers=headers)
+            print(resp.json()["location"]["country"]["name"])
+            # United States
+        - lang: "Node.js"
+          source: |
+            const axios = require("axios");
+
+            const { data } = await axios.get(
+              "https://api.getipgeo.com/v1/ip/8.8.8.8",
+              { headers: { "X-RapidAPI-Key": "YOUR_KEY" } }
+            );
+            console.log(data.location.city);
+            // Mountain View
+
+  # ------------------------------------------------------------------
+  # GET /v1/ip/me
+  # ------------------------------------------------------------------
+  /v1/ip/me:
+    get:
+      tags: ["IP Lookup"]
+      summary: "Look up your own IP address"
+      description: |
+        Returns geolocation for the calling client's IP. No IP parameter needed.
+
+        Uses `CF-Connecting-IP` / `X-Forwarded-For` headers when behind a proxy.
+      operationId: lookupMyIp
+      responses:
+        "200":
+          description: "Successful lookup"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IpLookupResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+      x-code-samples:
+        - lang: "curl"
+          source: |
+            curl -H "X-RapidAPI-Key: YOUR_KEY" \
+              "https://api.getipgeo.com/v1/ip/me"
+
+  # ------------------------------------------------------------------
+  # POST /v1/ip/batch
+  # ------------------------------------------------------------------
+  /v1/ip/batch:
+    post:
+      tags: ["IP Lookup"]
+      summary: "Batch lookup (up to 100 IPs)"
+      description: |
+        Look up up to 100 IP addresses in a single request.
+        Each IP counts toward your monthly quota.
+
+        **Max 100 IPs per request.** Larger bulk needs → contact Enterprise.
+      operationId: batchLookup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["ips"]
+              properties:
+                ips:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 100
+                  description: "List of IPv4 or IPv6 addresses"
+                  example: ["8.8.8.8", "1.1.1.1", "8.8.4.4"]
+            examples:
+              three-ips:
+                summary: "Batch of 3 IPs"
+                value:
+                  ips: ["8.8.8.8", "1.1.1.1", "8.8.4.4"]
+      responses:
+        "200":
+          description: "Successful batch lookup"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IpLookupResponse"
+              example:
+                results:
+                  - ip: "8.8.8.8"
+                    location:
+                      country: { code: "US", name: "United States" }
+                      city: "Mountain View"
+                    network: { isp: "Google LLC", asn: 15169, type: "hosting" }
+                    security: { is_tor: false, is_vpn: false, is_proxy: false, is_hosting: true }
+                    meta: { data_source: "MaxMind" }
+                  - ip: "1.1.1.1"
+                    location:
+                      country: { code: "AU", name: "Australia" }
+                      city: "Sydney"
+                    network: { isp: "Cloudflare", asn: 13335, type: "hosting" }
+                    security: { is_tor: false, is_vpn: false, is_proxy: false, is_hosting: true }
+                    meta: { data_source: "MaxMind" }
+        "400":
+          description: "Invalid request (empty list, bad IP, >100 IPs)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+      x-code-samples:
+        - lang: "curl"
+          source: |
+            curl -X POST "https://api.getipgeo.com/v1/ip/batch" \
+              -H "X-RapidAPI-Key: YOUR_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"ips": ["8.8.8.8", "1.1.1.1", "8.8.4.4"]}'
+
+  # ------------------------------------------------------------------
+  # GET /v1/usage
+  # ------------------------------------------------------------------
+  /v1/usage:
+    get:
+      tags: ["Usage"]
+      summary: "Check your monthly usage"
+      description: |
+        Returns current billing period usage: quota, used, remaining, prepaid credits.
+      operationId: getUsage
+      responses:
+        "200":
+          description: "Usage snapshot"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type: string
+                    example: "free"
+                  monthly_quota:
+                    type: integer
+                    example: 10000
+                  monthly_used:
+                    type: integer
+                    example: 4230
+                  remaining_quota:
+                    type: integer
+                    example: 5770
+                  prepaid_credits:
+                    type: integer
+                    example: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      x-code-samples:
+        - lang: "curl"
+          source: |
+            curl -H "X-RapidAPI-Key: YOUR_KEY" \
+              "https://api.getipgeo.com/v1/usage"
+
+  # ------------------------------------------------------------------
+  # GET /v1/health
+  # ------------------------------------------------------------------
+  /v1/health:
+    get:
+      tags: ["Health"]
+      summary: "API health check"
+      description: |
+        No authentication required. Returns component-level health status.
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: "Health status"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: ["healthy", "degraded"]
+                  version:
+                    type: string
+                  components:
+                    type: object
+                    properties:
+                      database:
+                        type: object
+                        properties:
+                          status: { type: string }
+                          detail: { type: string }
+                      redis:
+                        type: object
+                        properties:
+                          status: { type: string }
+                          detail: { type: string }
+                      api:
+                        type: object
+                        properties:
+                          status: { type: string }
+                          detail: { type: string }
+              example:
+                status: "healthy"
+                version: "0.2.0"
+                components:
+                  database: { status: "operational", detail: "MaxMind GeoIP2" }
+                  redis: { status: "operational", detail: "Connected" }
+                  api: { status: "operational", detail: "v0.2.0" }
+
+# ------------------------------------------------------------------
+# Components
+# ------------------------------------------------------------------
+components:
+  securitySchemes:
+    RapidAPIKey:
+      type: apiKey
+      in: header
+      name: X-RapidAPI-Key
+      description: |
+        Your RapidAPI key. Get one by subscribing to a plan on RapidAPI.
+
+  schemas:
+    IpLookupResponse:
+      type: object
+      required: ["ip", "location", "security", "meta"]
+      properties:
+        ip:
+          type: string
+          description: "The requested IP address"
+          example: "8.8.8.8"
+        location:
+          $ref: "#/components/schemas/Location"
+        network:
+          $ref: "#/components/schemas/Network"
+        security:
+          $ref: "#/components/schemas/Security"
+        meta:
+          $ref: "#/components/schemas/Meta"
+
+    Location:
+      type: object
+      properties:
+        country:
+          type: object
+          properties:
+            code: { type: string, example: "US" }
+            name: { type: string, example: "United States" }
+        continent:
+          type: object
+          properties:
+            code: { type: string, example: "NA" }
+            name: { type: string, example: "North America" }
+        city:
+          type: string
+          nullable: true
+          example: "Mountain View"
+        region:
+          type: string
+          nullable: true
+          example: "California"
+        postal_code:
+          type: string
+          nullable: true
+          example: "94043"
+        latitude:
+          type: number
+          example: 37.4223
+        longitude:
+          type: number
+          example: -122.0842
+        accuracy_km:
+          type: number
+          description: "Accuracy radius in kilometers (smaller = more precise)"
+          example: 10
+        timezone:
+          type: string
+          example: "America/Los_Angeles"
+
+    Network:
+      type: object
+      properties:
+        isp:
+          type: string
+          example: "Google LLC"
+        asn:
+          type: integer
+          example: 15169
+        type:
+          type: string
+          nullable: true
+          enum: ["hosting", null]
+          description: "Network category. 'hosting' = data center/cloud provider."
+          example: "hosting"
+
+    Security:
+      type: object
+      properties:
+        is_tor:
+          type: boolean
+          description: "IP is a known Tor exit node"
+        is_vpn:
+          type: boolean
+          description: "IP is associated with a VPN service"
+        is_proxy:
+          type: boolean
+          description: "IP is a known public proxy"
+        is_hosting:
+          type: boolean
+          description: "IP belongs to a data center / cloud hosting provider"
+
+    Meta:
+      type: object
+      properties:
+        data_source:
+          type: string
+          enum: ["MaxMind", "GeoLite2"]
+          description: "Database used for this lookup"
+        upgrade:
+          type: object
+          description: "Upgrade hint (Free/Starter plans only)"
+          properties:
+            risk_scoring:
+              type: string
+            learn_more:
+              type: string
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: "Missing or invalid API key"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+              docs: { type: string }
+          example:
+            error: "unauthorized"
+            message: "Missing X-RapidAPI-Key header"
+            docs: "https://getipgeo.com/docs#authentication"
+
+    RateLimited:
+      description: "Rate limit or quota exceeded"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+              docs: { type: string }
+          example:
+            error: "rate_limited"
+            message: "Monthly quota exhausted. Upgrade at getipgeo.com/pricing"
+            docs: "https://getipgeo.com/pricing"

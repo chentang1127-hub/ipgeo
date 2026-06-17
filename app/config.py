@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     city_db_path: str = "data/GeoLite2-City.mmdb"
     asn_db_path: str = "data/GeoLite2-ASN.mmdb"
 
-    # Paid GeoIP2 databases (higher precision, 95%+ city fill vs ~37% GeoLite2)
-    # Used for Pro / Business / Enterprise plans when available.
+    # Paid GeoIP2 databases (higher city-level accuracy and coverage)
+    # Used when available; falls back to GeoLite2 otherwise.
     geoip2_city_db_path: str = ""
     geoip2_asn_db_path: str = ""
 

@@ -94,9 +94,11 @@ async def lifespan(app: FastAPI):
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="IPGeo",
-    description="Fast, affordable IP geolocation API. Look up country, city, "
-    "coordinates, ISP, ASN, and timezone for any IP address.",
-    version="0.1.0",
+    description="IP geolocation API with built-in security detection — "
+    "VPN/proxy/Tor/hosting flags included on every plan, 10K free lookups/month. "
+    "Look up country, city, coordinates, ISP, ASN, timezone, and security "
+    "flags for any IP address.",
+    version="0.2.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -154,6 +156,24 @@ async def lookup_my_ip(
     return result
 
 
+# Mapping from common flat field names to their v2 response group.
+# Allows `?fields=country,city,isp` to work even though country & city
+# are nested inside `location` and isp inside `network`.
+_V2_FIELD_GROUPS = {
+    # location group
+    "country": "location", "continent": "location", "city": "location",
+    "region": "location", "postal_code": "location", "latitude": "location",
+    "longitude": "location", "accuracy_km": "location", "timezone": "location",
+    # network group
+    "isp": "network", "asn": "network", "type": "network",
+    # security group
+    "is_tor": "security", "is_vpn": "security",
+    "is_proxy": "security", "is_hosting": "security",
+    # meta group
+    "data_source": "meta", "upgrade": "meta",
+}
+
+
 @app.get("/v1/ip/{ip}")
 async def lookup_ip(
     ip: str,
@@ -165,6 +185,13 @@ async def lookup_ip(
 ):
     """
     Look up geolocation for an IP address.
+
+    Response is grouped into `location`, `network`, `security`, `meta`.
+    Use `?fields=` to select top-level groups or common field names.
+    Examples:
+      `?fields=location`          → only the location block
+      `?fields=country,city,isp`  → location block + network block
+      (no fields param)           → full v2 response
 
     ```
     curl -H "X-API-Key: ipgeo_YOUR_KEY" https://api.getipgeo.com/v1/ip/8.8.8.8
@@ -194,11 +221,18 @@ async def lookup_ip(
     with m.record_lookup_duration("lookup"):
         result = geo.lookup(ip, plan)
 
-    # Field filtering
+    # Field filtering — maps flat field names to v2 groups
     if fields:
-        field_set = {f.strip() for f in fields.split(",")}
-        field_set.add("ip")
-        result = {k: v for k, v in result.items() if k in field_set}
+        raw = {f.strip() for f in fields.split(",")}
+        # Resolve: keep top-level group keys as-is, map known fields to their group
+        groups = set()
+        for f in raw:
+            if f in ("ip", "location", "network", "security", "meta"):
+                groups.add(f)                     # top-level group
+            elif f in _V2_FIELD_GROUPS:
+                groups.add(_V2_FIELD_GROUPS[f])   # nested field → its group
+        groups.add("ip")
+        result = {k: v for k, v in result.items() if k in groups}
 
     m.record_lookup("lookup", plan, "ok")
     await _incr_total()
@@ -281,9 +315,16 @@ async def health():
 
     # 1. Database
     db_loaded = geo.loaded if geo else False
+    has_geoip2 = geo.has_geoip2 if geo else False
     components["database"] = {
         "status": "operational" if db_loaded else "degraded",
-        "detail": "GeoIP2 + GeoLite2 loaded" if db_loaded else "Database not loaded",
+        "detail": (
+            "MaxMind GeoIP2"
+            if has_geoip2
+            else "MaxMind GeoLite2"
+            if db_loaded
+            else "Database not loaded"
+        ),
     }
     if not db_loaded:
         overall = "degraded"

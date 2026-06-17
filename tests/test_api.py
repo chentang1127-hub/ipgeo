@@ -24,8 +24,8 @@ class TestHealth:
         resp = await client.get("/v1/health")
         assert resp.status_code == 200
         body = resp.json()
-        assert body["status"] == "healthy"
-        assert body["version"] == "0.1.0"
+        assert body["status"] in ("healthy", "degraded")
+        assert body["version"] == "0.2.0"
         assert body["components"]["database"]["status"] == "operational"
 
     async def test_health_no_auth_required(self, client: AsyncClient):
@@ -70,8 +70,11 @@ class TestLookupIP:
         assert resp.status_code == 200
         body = resp.json()
         assert body["ip"] == "8.8.8.8"
-        assert "country" in body
-        assert body["country"]["code"] == "US"
+        assert "location" in body
+        assert body["location"]["country"]["code"] == "US"
+        assert "network" in body
+        assert "security" in body
+        assert "meta" in body
 
     async def test_valid_ipv6(self, client: AsyncClient, api_key: str):
         resp = await client.get(
@@ -97,20 +100,33 @@ class TestLookupIP:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["country"]["code"] == "XX"
+        assert body["location"]["country"]["code"] == "XX"
 
     async def test_field_filtering(self, client: AsyncClient, api_key: str):
+        """?fields=country,network → location group + network group."""
         resp = await client.get(
             "/v1/ip/8.8.8.8?fields=country,network",
             headers={"X-API-Key": api_key},
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert "ip" in body          # ip is always included
-        assert "country" in body
-        assert "network" in body
-        assert "city" not in body    # not requested
-        assert "timezone" not in body
+        assert "ip" in body              # ip is always included
+        assert "location" in body        # country → location group
+        assert "network" in body         # top-level group
+        assert "security" not in body    # not requested
+        assert "meta" not in body
+
+    async def test_field_filtering_group(self, client: AsyncClient, api_key: str):
+        """?fields=location,security → just those groups."""
+        resp = await client.get(
+            "/v1/ip/8.8.8.8?fields=location,security",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "location" in body
+        assert "security" in body
+        assert "network" not in body
 
     async def test_cf_connecting_ip_header(self, client: AsyncClient, api_key: str):
         """When CF-Connecting-IP is set, /v1/ip/me should use it."""
