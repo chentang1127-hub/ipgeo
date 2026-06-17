@@ -119,7 +119,7 @@ paths:
                       is_proxy: false
                       is_hosting: true
                     meta:
-                      data_source: "MaxMind"
+                      data_source: "GeoLite2"
                       upgrade:
                         risk_scoring: "Get risk_score, confidence, and abuse reports on Pro+"
                         learn_more: "https://getipgeo.com/risk"
@@ -145,7 +145,7 @@ paths:
                       is_proxy: false
                       is_hosting: true
                     meta:
-                      data_source: "MaxMind"
+                      data_source: "GeoLite2"
         "400":
           description: "Invalid IP address"
           content:
@@ -266,14 +266,14 @@ paths:
                       city: "Mountain View"
                     network: { isp: "Google LLC", asn: 15169, type: "hosting" }
                     security: { is_tor: false, is_vpn: false, is_proxy: false, is_hosting: true }
-                    meta: { data_source: "MaxMind" }
+                    meta: { data_source: "GeoLite2" }
                   - ip: "1.1.1.1"
                     location:
                       country: { code: "AU", name: "Australia" }
                       city: "Sydney"
                     network: { isp: "Cloudflare", asn: 13335, type: "hosting" }
                     security: { is_tor: false, is_vpn: false, is_proxy: false, is_hosting: true }
-                    meta: { data_source: "MaxMind" }
+                    meta: { data_source: "GeoLite2" }
         "400":
           description: "Invalid request (empty list, bad IP, >100 IPs)"
           content:
@@ -489,7 +489,7 @@ components:
       properties:
         data_source:
           type: string
-          enum: ["MaxMind", "GeoLite2"]
+          enum: ["GeoIP2", "GeoLite2"]
           description: "Database used for this lookup"
         upgrade:
           type: object

@@ -187,7 +187,7 @@ class GeoReader:
 
         # 3. Private / reserved
         if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved:
-            result = self._build_private_result(ip_str, plan)
+            result = self._build_private_result(ip_str, plan, use_geoip2)
             self._cache_put(cache_key, result)
             return result
 
@@ -258,21 +258,25 @@ class GeoReader:
         self._cache[key] = val
 
     @staticmethod
-    def _build_private_result(ip: str, plan: str) -> dict:
+    def _build_private_result(ip: str, plan: str, use_geoip2: bool = False) -> dict:
         result = {
             "ip": ip,
             "location": {
                 "country": {"code": "XX", "name": "Private Network"},
                 "city": None,
             },
-            "network": None,
+            "network": {
+                "isp": None,
+                "asn": None,
+                "type": None,
+            },
             "security": {
                 "is_tor": False,
                 "is_vpn": False,
                 "is_proxy": False,
                 "is_hosting": False,
             },
-            "meta": {"data_source": "GeoIP2"},
+            "meta": {"data_source": "GeoIP2" if use_geoip2 else "GeoLite2"},
         }
         return result
 
@@ -322,7 +326,7 @@ class GeoReader:
                 "isp": asn.get("autonomous_system_organization"),
                 "asn": asn_num,
                 "type": net_type,
-            }),
+            }) or {"isp": None, "asn": None, "type": None},
         }
 
         return _compact(result)
