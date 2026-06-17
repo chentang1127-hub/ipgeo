@@ -472,30 +472,30 @@ class TestRapidAPI:
     # -- Subscription mapping ------------------------------------------
 
     async def test_free_subscription_maps_to_free_plan(self, client: AsyncClient):
-        """FREE → free (GeoLite2 data)."""
+        """FREE (legacy) → free."""
         headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "FREE"}
         resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
         assert resp.status_code == 200
 
-    async def test_basic_subscription_maps_to_starter(self, client: AsyncClient):
-        """BASIC → starter."""
+    async def test_basic_subscription_maps_to_free(self, client: AsyncClient):
+        """BASIC → free."""
         headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "BASIC"}
         resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
         assert resp.status_code == 200
 
-    async def test_pro_subscription_maps_to_pro(self, client: AsyncClient):
-        """PRO → pro (GeoIP2 data when available)."""
+    async def test_pro_subscription_maps_to_starter(self, client: AsyncClient):
+        """PRO → starter."""
         resp = await client.get("/v1/ip/8.8.8.8", headers=RAPIDAPI_HEADERS)
         assert resp.status_code == 200
 
-    async def test_ultra_subscription_maps_to_business(self, client: AsyncClient):
-        """ULTRA → business."""
+    async def test_ultra_subscription_maps_to_pro(self, client: AsyncClient):
+        """ULTRA → pro."""
         headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "ULTRA"}
         resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
         assert resp.status_code == 200
 
-    async def test_mega_subscription_maps_to_enterprise(self, client: AsyncClient):
-        """MEGA → enterprise (unmetered)."""
+    async def test_mega_subscription_maps_to_business(self, client: AsyncClient):
+        """MEGA → business."""
         headers = {**RAPIDAPI_HEADERS, "X-RapidAPI-Subscription": "MEGA"}
         resp = await client.get("/v1/ip/8.8.8.8", headers=headers)
         assert resp.status_code == 200
@@ -517,7 +517,7 @@ class TestRapidAPI:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["plan"] == "pro"
+        assert body["plan"] == "starter"
 
     # -- Non-API endpoints ---------------------------------------------
 
