@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Upgrade — IPGeo</title>
+  <meta name="description" content="Upgrade your IPGeo plan manually via PayPal. Choose a plan and get your API key within minutes.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --card2: #18181f; --border: #252530; --text: #e4e4e7; --dim: #71717a; --dim2: #52525b; --accent: #7c3aed; --green: #10b981; --blue: #3b82f6; --radius: 10px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+    .container { max-width: 680px; margin: 0 auto; padding: 40px 24px; }
+
+    .logo { text-align: center; margin-bottom: 48px; }
+    .logo a { color: #fff; text-decoration: none; font-size: 1.4rem; font-weight: 700; }
+    .logo span { color: var(--accent); }
+
+    h1 { color: #fff; font-size: 1.8rem; text-align: center; margin-bottom: 8px; }
+    .subtitle { color: var(--dim); text-align: center; font-size: .92rem; margin-bottom: 40px; }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+    .step { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 16px; text-align: center; }
+    .step .num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .8rem; font-weight: 700; margin-bottom: 10px; }
+    .step h3 { color: #fff; font-size: .85rem; margin-bottom: 4px; }
+    .step p { color: var(--dim); font-size: .72rem; }
+
+    /* Plan cards */
+    .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+    .plan-card { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius); padding: 24px 16px 20px; text-align: center; cursor: pointer; transition: border-color .2s; }
+    .plan-card:hover { border-color: var(--dim2); }
+    .plan-card.selected { border-color: var(--accent); background: var(--card2); }
+    .plan-card h3 { color: #fff; font-size: 1rem; }
+    .plan-card .price { font-size: 2rem; font-weight: 800; color: #fff; margin: 8px 0 4px; }
+    .plan-card .price small { font-size: .7rem; color: var(--dim); font-weight: 400; }
+    .plan-card .qty { color: var(--dim); font-size: .78rem; }
+    .plan-card .badge { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 10px; background: #064e3b; color: var(--green); font-size: .65rem; font-weight: 600; }
+
+    /* Email */
+    .email-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; }
+    .email-section label { display: block; color: var(--dim); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .email-section input { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: .95rem; outline: none; }
+    .email-section input:focus { border-color: var(--accent); }
+
+    /* PayPal button */
+    .pay-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; background: #0070ba; color: #fff; border: none; border-radius: var(--radius); font-size: 1.05rem; font-weight: 600; cursor: pointer; text-decoration: none; margin-bottom: 20px; transition: background .2s; }
+    .pay-btn:hover { background: #005ea6; }
+    .pay-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    /* After payment note */
+    .after-pay { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; text-align: center; }
+    .after-pay h4 { color: #fff; font-size: .9rem; margin-bottom: 8px; }
+    .after-pay p { color: var(--dim); font-size: .82rem; }
+    .after-pay .email-link { color: var(--accent); font-weight: 600; }
+
+    /* Back link */
+    .back { text-align: center; margin-top: 32px; }
+    .back a { color: var(--dim2); font-size: .82rem; text-decoration: none; }
+    .back a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .plan-grid, .steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo"><a href="/">IP<span>Geo</span></a></div>
+
+  <h1>Manual Upgrade</h1>
+  <p class="subtitle">Paddle is pending review. Pay via PayPal and get your API key within minutes.</p>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Choose Plan</h3>
+      <p>Select your plan below</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Pay with PayPal</h3>
+      <p>Secure global payment</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h3>Get API Key</h3>
+      <p>Sent to your email in &lt;5 min</p>
+    </div>
+  </div>
+
+  <!-- Plans -->
+  <div class="plan-grid" id="plan-grid">
+    <div class="plan-card selected" data-plan="starter" data-amount="9" data-price="$9">
+      <h3>🚀 Starter</h3>
+      <div class="price">$9<small>/mo</small></div>
+      <div class="qty">100,000 queries</div>
+    </div>
+    <div class="plan-card" data-plan="pro" data-amount="29" data-price="$29">
+      <h3>Pro 🎯</h3>
+      <div class="price">$29<small>/mo</small></div>
+      <div class="qty">500,000 queries</div>
+      <div class="badge">GeoIP2</div>
+    </div>
+    <div class="plan-card" data-plan="business" data-amount="79" data-price="$79">
+      <h3>💼 Business</h3>
+      <div class="price">$79<small>/mo</small></div>
+      <div class="qty">1M queries</div>
+      <div class="badge">GeoIP2</div>
+    </div>
+  </div>
+
+  <!-- Email -->
+  <div class="email-section">
+    <label>Your Email Address</label>
+    <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+  </div>
+
+  <!-- PayPal Button -->
+  <a class="pay-btn" id="pay-btn" href="https://paypal.me/getipgeo/9" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797H8.634c-.69 0-1.277.498-1.386 1.18L6.31 18.98l-.398 2.05a.64.64 0 0 1-.633.535h-2.93l.727-4.228z"/></svg>
+    Pay with PayPal
+  </a>
+
+  <!-- After payment -->
+  <div class="after-pay">
+    <h4>After payment, email your PayPal transaction ID to</h4>
+    <p><a class="email-link" href="mailto:chentang1127@gmail.com?subject=IPGeo%20Upgrade%20-%20Starter">chentang1127@gmail.com</a></p>
+    <p style="margin-top:8px;">Include your <strong>plan choice</strong> and <strong>email address</strong>.<br>Your API key will be sent within 5 minutes.</p>
+    <p style="font-size:.72rem;color:var(--dim2);margin-top:12px;">Need help? Reply to the same email or <a href="https://github.com/chentang1127-hub/ipgeo" style="color:var(--dim2);">open a GitHub issue</a>.</p>
+  </div>
+
+  <div class="back">
+    <a href="/signup">← Back to regular signup</a>
+  </div>
+</div>
+
+<script>
+// Plan selection
+document.querySelectorAll('.plan-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.plan-card').forEach(function(c) { c.classList.remove('selected'); });
+    card.classList.add('selected');
+    var amt = card.dataset.amount;
+    document.getElementById('pay-btn').href = 'https://paypal.me/getipgeo/' + amt;
+  });
+});
+
+// Update mailto subject
+document.getElementById('pay-btn').addEventListener('click', function() {
+  var plan = document.querySelector('.plan-card.selected').dataset.plan;
+  var email = document.getElementById('email').value.trim() || 'your@email.com';
+  var mailto = document.querySelector('.after-pay .email-link');
+  mailto.href = 'mailto:chentang1127@gmail.com?subject=IPGeo%20Upgrade%20-%20' +
+    plan.charAt(0).toUpperCase() + plan.slice(1) +
+    '&body=Plan: ' + plan + '%0AEmail: ' + email + '%0APayPal Transaction ID: ';
+});
+
+// Analytics
+(function() {
+  var _ANALYTICS = 'https://api.getipgeo.com/v1/analytics/event';
+  function _track(event, extra) {
+    var p = {event: event, page: location.pathname, referrer: document.referrer};
+    if (extra) Object.assign(p, extra);
+    try { fetch(_ANALYTICS, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(p)}).catch(function(){}); } catch(e) {}
+  }
+  _track('page_view');
+
+  document.getElementById('pay-btn').addEventListener('click', function() {
+    var plan = document.querySelector('.plan-card.selected').dataset.plan;
+    var email = document.getElementById('email').value.trim();
+    _track('manual_upgrade_click', {plan: plan, email_filled: !!email});
+  });
+})();
+</script>
+
+</body>
+</html>

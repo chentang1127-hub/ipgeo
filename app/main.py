@@ -757,6 +757,9 @@ async def on_429(request: Request, exc: HTTPException):
         content={
             "error": "rate_limited",
             "message": exc.detail or "Too many requests",
-            "docs": "https://getipgeo.com/pricing",
+            "upgrade": {
+                "url": "https://getipgeo.com/manual-upgrade",
+                "contact": "chentang1127@gmail.com",
+            },
         },
     )
