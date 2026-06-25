@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP Geolocation Data Providers Comparison 2026 — MaxMind vs DB-IP vs IP2Location | IPGeo</title>
+  <meta name="description" content="Comparing MaxMind GeoLite2, DB-IP, IP2Location, and ipgeolocation.io for commercial API redistribution. Pricing, licensing, accuracy, and features.">
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --border: #252530; --text: #e4e4e7; --dim: #71717a; --accent: #7c3aed; --green: #10b981; --red: #ef4444; --orange: #f59e0b; --radius: 10px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    nav .logo { font-size: 1.3rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav a { color: var(--dim); text-decoration: none; font-size: .85rem; }
+    h1 { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1.25; margin-bottom: 12px; }
+    .meta { color: var(--dim); font-size: .82rem; margin-bottom: 32px; }
+    h2 { font-size: 1.4rem; font-weight: 700; color: #fff; margin: 40px 0 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: .85rem; }
+    th { background: var(--card); padding: 12px 14px; text-align: left; font-weight: 600; color: #fff; border-bottom: 2px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+    .good { color: var(--green); }
+    .bad { color: var(--red); }
+    .warn { color: var(--orange); }
+    .verdict { background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius); padding: 24px 28px; margin: 32px 0; }
+    .verdict h3 { color: var(--accent); margin: 0 0 8px; }
+    footer { border-top: 1px solid var(--border); padding: 32px 0; text-align: center; color: var(--dim); font-size: .78rem; margin-top: 64px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <nav><a href="/" class="logo">IP<span>Geo</span></a><a href="/blog">← Blog</a></nav>
+<article>
+  <h1>IP Geolocation Data Providers: Who Powers the APIs?</h1>
+  <p class="meta">June 25, 2026 — internal research for IPGeo data sourcing</p>
+
+  <p>If you're building an IP geolocation API, the first decision is: <strong>where does the data come from?</strong> We researched four major data providers to compare pricing, licensing, and accuracy for commercial API redistribution.</p>
+
+  <h2>Overview</h2>
+  <table>
+    <tr><th>Provider</th><th>Free DB</th><th>Free License</th><th>Commercial DB Price</th><th>Redistribution License</th><th>City Accuracy</th></tr>
+    <tr>
+      <td><strong>MaxMind GeoLite2</strong></td>
+      <td>✅ Yes</td>
+      <td class="warn">CC BY-SA — attribution, no redistribution</td>
+      <td>GeoLite commercial: TBD<br>GeoIP2: <strong class="bad">$160K/yr</strong></td>
+      <td>Separate negotiation</td>
+      <td>~37% city fill</td>
+    </tr>
+    <tr>
+      <td><strong>DB-IP</strong></td>
+      <td>✅ Yes (Lite)</td>
+      <td class="warn">CC BY 4.0 — attribution required</td>
+      <td class="good">Commercial: contact for quote<br>(estimated $1K-$5K/yr)</td>
+      <td>Included in commercial DB</td>
+      <td class="good">Better than GeoLite2</td>
+    </tr>
+    <tr>
+      <td><strong>IP2Location</strong></td>
+      <td>✅ Yes (LITE)</td>
+      <td class="warn">CC BY-SA 4.0 — attribution</td>
+      <td>Internal: <strong class="good">$99-$980/yr</strong><br>SaaS/Redistribution: <strong>contact us</strong></td>
+      <td>Separate "SaaS License" — contact</td>
+      <td>Good (commercial)</td>
+    </tr>
+    <tr>
+      <td><strong>ipgeolocation.io</strong></td>
+      <td>❌ No</td>
+      <td>N/A</td>
+      <td>DB pricing: contact for quote</td>
+      <td>Unknown — contact sales</td>
+      <td>Good</td>
+    </tr>
+  </table>
+
+  <h2>Detailed Breakdown</h2>
+
+  <h3>1. MaxMind — The Gold Standard</h3>
+  <p><strong>Pros:</strong> Industry standard. GeoLite2 is free. GeoIP2 has ~95% city fill. Used by Cloudflare, npm, Cisco.</p>
+  <p><strong>Cons:</strong> GeoIP2 at $160K/yr is for enterprises only. GeoLite2 redistribution requires a separate commercial license (<strong>price TBD — awaiting quote</strong>). Free GeoLite2 license (CC BY-SA) does NOT cover commercial redistribution through an API.</p>
+  <p><strong>Verdict:</strong> Wait for GeoLite commercial license quote. If &lt;$5K/yr, it's the safest choice — same data we already use, just legally compliant.</p>
+
+  <h3>2. DB-IP — The Best Alternative</h3>
+  <p><strong>Pros:</strong> Commercial DB has better city fill than GeoLite2. Daily updates. MMDB format compatible with our existing code. Pricing likely affordable for startups.</p>
+  <p><strong>Cons:</strong> Commercial pricing not public — need to contact. Company is smaller (Eris Networks S.A.S, France). Less industry recognition than MaxMind.</p>
+  <p><strong>Verdict:</strong> <strong class="good">Strongest Plan B.</strong> If MaxMind GeoLite commercial is too expensive, DB-IP is the most practical drop-in replacement.</p>
+
+  <h3>3. IP2Location — Clear Internal Pricing, Murky Redistribution</h3>
+  <p><strong>Pros:</strong> Transparent internal pricing: $99/yr/server, $980/yr unlimited site. Long history (since 2001). Has both location and proxy databases. MMDB format supported.</p>
+  <p><strong>Cons:</strong> SaaS/redistribution license price is hidden behind "Contact Us". LITE edition requires attribution (CC BY-SA). DB product lineup is confusing (25+ variants).</p>
+  <p><strong>Verdict:</strong> Worth asking for a redistribution quote. Their internal pricing suggests they're affordable. IP2Proxy LITE could replace our Tor/VPN detection.</p>
+
+  <h3>4. ipgeolocation.io — API-First, Not DB-First</h3>
+  <p><strong>Pros:</strong> Good SDK ecosystem. Has security databases (VPN/proxy detection).</p>
+  <p><strong>Cons:</strong> <strong class="bad">No downloadable free database.</strong> They want you to use their API, not host their data. DB pricing page was 404. "Request Quote" for everything. Feels like they don't want small customers.</p>
+  <p><strong>Verdict:</strong> <strong class="bad">Skip.</strong> Not suitable as a data source for building your own API.</p>
+
+  <h2>Final Decision Matrix</h2>
+  <table>
+    <tr><th>Priority</th><th>Provider</th><th>Next Step</th><th>Estimated Cost</th></tr>
+    <tr>
+      <td class="good">🥇 First choice</td>
+      <td><strong>MaxMind GeoLite Commercial</strong></td>
+      <td>Wait for email reply</td>
+      <td>TBD (hoping &lt;$5K/yr)</td>
+    </tr>
+    <tr>
+      <td>🥈 Plan B</td>
+      <td><strong>DB-IP Commercial</strong></td>
+      <td>Send inquiry to db-ip.com</td>
+      <td>TBD (est. $1-5K/yr)</td>
+    </tr>
+    <tr>
+      <td>🥉 Plan C</td>
+      <td><strong>IP2Location Redistribution</strong></td>
+      <td>Contact for SaaS quote</td>
+      <td>TBD</td>
+    </tr>
+    <tr>
+      <td class="bad">❌ No</td>
+      <td>ipgeolocation.io</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+  </table>
+
+  <div class="verdict">
+    <h3>Recommendation</h3>
+    <p>Wait for <strong>MaxMind GeoLite commercial</strong> quote first. If it's reasonable (&lt;$5K/yr), sign it — zero code changes, fully legal.</p>
+    <p>If MaxMind is too expensive, immediately pivot to <strong>DB-IP commercial</strong>. Drop-in MMDB replacement, better city accuracy, likely startup-friendly pricing.</p>
+  </div>
+</article>
+<footer>© 2026 IPGeo · <a href="/" style="color:var(--dim)">Home</a> · <a href="/blog" style="color:var(--dim)">Blog</a></footer>
+</div>
+</body>
+</html>
