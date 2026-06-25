@@ -704,6 +704,7 @@ async def admin_dashboard(request: Request):
     Internal dashboard — requires X-Admin-Token.
     Returns aggregated metrics for the dashboard page.
     """
+    settings = get_settings()
     admin_token = request.headers.get("X-Admin-Token")
     if admin_token != settings.admin_token:
         raise HTTPException(403, detail="Invalid admin token")
