@@ -109,7 +109,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["X-API-Key", "Content-Type"],
+    allow_headers=["X-API-Key", "X-Admin-Token", "Content-Type"],
 )
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(rapidapi.RapidAPIMiddleware)
