@@ -698,6 +698,143 @@ async def public_stats():
     }
 
 
+@app.get("/v1/admin/dashboard")
+async def admin_dashboard(request: Request):
+    """
+    Internal dashboard — requires X-Admin-Token.
+    Returns aggregated metrics for the dashboard page.
+    """
+    admin_token = request.headers.get("X-Admin-Token")
+    if admin_token != settings.admin_token:
+        raise HTTPException(403, detail="Invalid admin token")
+
+    from datetime import datetime, timezone, timedelta
+
+    redis = get_redis()
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # --- API calls ---
+    total_lookups = int(await redis.get("ipgeo:stats:total_lookups") or "0")
+
+    # --- Registrations (signup_complete) ---
+    try:
+        signups_raw = await redis.hgetall(f"ipgeo:analytics:{today}:signup_complete") or {}
+        signups_today = sum(int(v) for v in signups_raw.values())
+    except Exception:
+        signups_today = 0
+
+    # --- Pricing clicks ---
+    try:
+        pricing_raw = await redis.hgetall(f"ipgeo:analytics:{today}:pricing_click") or {}
+        pricing_today = sum(int(v) for v in pricing_raw.values())
+    except Exception:
+        pricing_today = 0
+
+    # --- Demo tries ---
+    try:
+        demo_raw = await redis.hgetall(f"ipgeo:analytics:{today}:demo_try") or {}
+        demo_today = sum(int(v) for v in demo_raw.values())
+    except Exception:
+        demo_today = 0
+
+    # --- Page views today ---
+    try:
+        pv_raw = await redis.hgetall(f"ipgeo:analytics:{today}:page_view") or {}
+        pv_today = sum(int(v) for v in pv_raw.values())
+    except Exception:
+        pv_today = 0
+
+    # --- Channel attribution (referrers from page_view, last 7 days) ---
+    channels = {}
+    for i in range(7):
+        d = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+        try:
+            raw = await redis.hgetall(f"ipgeo:analytics:{d}:page_view") or {}
+            for k, v in raw.items():
+                if k.startswith("ref:"):
+                    ref = k[4:]
+                    # Normalize referrer to channel
+                    channel = _classify_referrer(ref)
+                    channels[channel] = channels.get(channel, 0) + int(v)
+        except Exception:
+            pass
+
+    # --- User plan distribution ---
+    plan_counts = {"free": 0, "starter": 0, "pro": 0, "business": 0}
+    try:
+        keys = await redis.keys("ipgeo:user:*:plan")
+        for key in keys:
+            plan = await redis.get(key) or "free"
+            plan_counts[plan] = plan_counts.get(plan, 0) + 1
+    except Exception:
+        pass
+    total_users = sum(plan_counts.values())
+
+    # --- GitHub / PyPI / npm (static placeholders, can be updated via API) ---
+    gh_stars = int(await redis.get("ipgeo:external:github_stars") or "0")
+    pypi_dl = int(await redis.get("ipgeo:external:pypi_downloads") or "0")
+    npm_dl = int(await redis.get("ipgeo:external:npm_downloads") or "0")
+
+    return {
+        "date": today,
+        "lookups": {"total": total_lookups},
+        "users": {"total": total_users, "by_plan": plan_counts},
+        "today": {
+            "signups": signups_today,
+            "pricing_clicks": pricing_today,
+            "demo_tries": demo_today,
+            "page_views": pv_today,
+        },
+        "channels": channels,
+        "external": {
+            "github_stars": gh_stars,
+            "pypi_downloads": pypi_dl,
+            "npm_downloads": npm_dl,
+        },
+    }
+
+
+def _classify_referrer(ref: str) -> str:
+    """Map a raw referrer URL to a channel label."""
+    ref_lower = ref.lower()
+    if "google." in ref_lower:
+        return "Google Search"
+    if "dev.to" in ref_lower:
+        return "Dev.to"
+    if "reddit.com" in ref_lower:
+        return "Reddit"
+    if "stackoverflow.com" in ref_lower or "stackexchange.com" in ref_lower:
+        return "Stack Overflow"
+    if "github.com" in ref_lower:
+        return "GitHub"
+    if "hackernews" in ref_lower or "news.ycombinator.com" in ref_lower:
+        return "Hacker News"
+    if "pypi.org" in ref_lower:
+        return "PyPI"
+    if "npmjs.com" in ref_lower:
+        return "npm"
+    if "producthunt.com" in ref_lower:
+        return "Product Hunt"
+    if "twitter.com" in ref_lower or "x.com" in ref_lower:
+        return "Twitter / X"
+    if "baidu.com" in ref_lower:
+        return "Baidu"
+    if "csdn.net" in ref_lower:
+        return "CSDN"
+    if "juejin" in ref_lower:
+        return "掘金"
+    if "v2ex.com" in ref_lower:
+        return "V2EX"
+    if "zhihu.com" in ref_lower:
+        return "知乎"
+    if "t.co" in ref_lower:
+        return "Twitter / X"
+    if ref_lower.startswith("direct") or not ref_lower:
+        return "Direct"
+    return "Other"
+
+
 @app.get("/metrics")
 async def metrics():
     """Prometheus metrics endpoint."""

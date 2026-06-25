@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dashboard — IPGeo</title>
+  <style>
+    :root { --bg: #0a0a0f; --card: #13131a; --card2: #18181f; --border: #252530; --text: #e4e4e7; --dim: #71717a; --dim2: #52525b; --accent: #7c3aed; --green: #10b981; --red: #ef4444; --orange: #f59e0b; --blue: #3b82f6; --radius: 10px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    nav .logo { font-size: 1.3rem; font-weight: 700; color: #fff; text-decoration: none; }
+    nav .logo span { color: var(--accent); }
+    nav .status { font-size:.78rem; color:var(--dim); }
+    nav .status .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+    nav .status .dot.live { background:var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
+    .kpi .num { font-size: 2rem; font-weight: 800; color: #fff; }
+    .kpi .label { font-size:.72rem; color:var(--dim); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+    .kpi .sub { font-size:.7rem; color:var(--dim2); margin-top:2px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .card h2 { color:#fff; font-size:.9rem; margin-bottom:16px; }
+    .bar { display:flex; align-items:center; margin-bottom:8px; }
+    .bar .label { width:120px; font-size:.78rem; color:var(--dim); flex-shrink:0; }
+    .bar .track { flex:1; height:8px; background:var(--bg); border-radius:4px; overflow:hidden; }
+    .bar .fill { height:100%; border-radius:4px; background:var(--accent); transition: width .3s; }
+    .bar .count { width:40px; text-align:right; font-size:.78rem; color:var(--text); flex-shrink:0; }
+
+    .event-list { list-style:none; }
+    .event-list li { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:.82rem; }
+    .event-list .val { color:#fff; font-weight:600; font-variant-numeric: tabular-nums; }
+
+    .empty { color:var(--dim2); font-size:.8rem; text-align:center; padding:20px; }
+    .warn { color:var(--orange); }
+    .good { color:var(--green); }
+
+    footer { border-top:1px solid var(--border); padding:24px 0; text-align:center; color:var(--dim); font-size:.72rem; margin-top:32px; }
+    @media (max-width:700px) { .kpi-grid { grid-template-columns: 1fr 1fr; } .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <nav>
+    <a href="/" class="logo">IP<span>Geo</span></a>
+    <div class="status"><span class="dot live"></span> Live · <span id="ts">--</span></div>
+  </nav>
+
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="num" id="kpi-users">-</div>
+      <div class="label">总注册用户</div>
+    </div>
+    <div class="kpi">
+      <div class="num" id="kpi-lookups">-</div>
+      <div class="label">总 API 调用</div>
+    </div>
+    <div class="kpi">
+      <div class="num" id="kpi-signups">-</div>
+      <div class="label">今日注册</div>
+    </div>
+    <div class="kpi">
+      <div class="num" id="kpi-pricing">-</div>
+      <div class="label">今日 Upgrade 点击</div>
+    </div>
+  </div>
+
+  <!-- Today's activity + Channels -->
+  <div class="row">
+    <div class="card">
+      <h2>📊 今日事件</h2>
+      <ul class="event-list" id="today-events">
+        <li><span>加载中...</span><span></span></li>
+      </ul>
+      <div class="empty" style="margin-top:12px; font-size:.68rem;" id="today-extra"></div>
+    </div>
+    <div class="card">
+      <h2>📈 渠道来源 (7 天)</h2>
+      <div id="channels"><div class="empty">暂无数据</div></div>
+    </div>
+  </div>
+
+  <!-- User plans + External -->
+  <div class="row">
+    <div class="card">
+      <h2>👥 用户分布</h2>
+      <div id="plans"><div class="empty">暂无数据</div></div>
+    </div>
+    <div class="card">
+      <h2>🌐 外部指标</h2>
+      <ul class="event-list" id="external">
+        <li><span>GitHub Stars</span><span class="val">-</span></li>
+        <li><span>PyPI 下载</span><span class="val">-</span></li>
+        <li><span>npm 下载</span><span class="val">-</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>IPGeo Internal Dashboard · Auto-refresh 60s</footer>
+</div>
+
+<script>
+const API = '/v1/admin/dashboard';
+const TOKEN = prompt('Admin token:');
+if (!TOKEN) document.body.innerHTML = '<div style="text-align:center;padding:100px;color:var(--dim);">Token required</div>';
+
+function format(n) { return n == null ? '-' : Number(n).toLocaleString(); }
+
+function renderBars(container, data) {
+  const entries = Object.entries(data || {}).sort((a,b) => b[1] - a[1]);
+  const total = entries.reduce((s,e) => s + e[1], 0) || 1;
+  if (!entries.length) {
+    container.innerHTML = '<div class="empty">暂无数据</div>';
+    return;
+  }
+  container.innerHTML = entries.map(([label, count]) => `
+    <div class="bar">
+      <div class="label">${label}</div>
+      <div class="track"><div class="fill" style="width:${Math.max(count/total*100,1)}%"></div></div>
+      <div class="count">${format(count)}</div>
+    </div>
+  `).join('');
+}
+
+async function fetchData() {
+  try {
+    const resp = await fetch(API, { headers: { 'X-Admin-Token': TOKEN } });
+    if (!resp.ok) throw new Error(resp.status);
+    const d = await resp.json();
+
+    // KPIs
+    document.getElementById('kpi-users').textContent = format(d.users?.total);
+    document.getElementById('kpi-lookups').textContent = format(d.lookups?.total);
+    document.getElementById('kpi-signups').textContent = format(d.today?.signups);
+    document.getElementById('kpi-pricing').textContent = format(d.today?.pricing_clicks);
+
+    // Today events
+    const ev = d.today || {};
+    const eventsHtml = [
+      ['Page Views', ev.page_views || 0],
+      ['Demo Tries', ev.demo_tries || 0],
+      ['Signups', ev.signups || 0],
+      ['Pricing Clicks', ev.pricing_clicks || 0],
+    ];
+    document.getElementById('today-events').innerHTML = eventsHtml.map(([k,v]) =>
+      `<li><span>${k}</span><span class="val">${format(v)}</span></li>`
+    ).join('');
+    document.getElementById('today-extra').textContent = 'Date: ' + (d.date || '-');
+
+    // Channels
+    renderBars(document.getElementById('channels'), d.channels);
+
+    // User plans
+    const plans = d.users?.by_plan || {};
+    renderBars(document.getElementById('plans'), plans);
+
+    // External
+    const ext = d.external || {};
+    document.getElementById('external').innerHTML = `
+      <li><span>⭐ GitHub Stars</span><span class="val">${format(ext.github_stars)}</span></li>
+      <li><span>📦 PyPI 下载</span><span class="val">${format(ext.pypi_downloads)}</span></li>
+      <li><span>📦 npm 下载</span><span class="val">${format(ext.npm_downloads)}</span></li>
+    `;
+
+    document.getElementById('ts').textContent = new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('ts').textContent = 'Error: ' + e.message;
+  }
+}
+
+fetchData();
+setInterval(fetchData, 60000);
+</script>
+</body>
+</html>
