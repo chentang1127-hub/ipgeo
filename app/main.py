@@ -315,13 +315,10 @@ async def health():
 
     # 1. Database
     db_loaded = geo.loaded if geo else False
-    has_geoip2 = geo.has_geoip2 if geo else False
     components["database"] = {
         "status": "operational" if db_loaded else "degraded",
         "detail": (
-            "MaxMind GeoIP2"
-            if has_geoip2
-            else "MaxMind GeoLite2"
+            "DB-IP City Lite"
             if db_loaded
             else "Database not loaded"
         ),

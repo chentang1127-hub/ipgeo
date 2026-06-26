@@ -21,13 +21,15 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     maxmind_license_key: str = ""
 
-    city_db_path: str = "data/GeoLite2-City.mmdb"
-    asn_db_path: str = "data/GeoLite2-ASN.mmdb"
+    # DB-IP City Lite (free, CC BY 4.0, ~100% city fill)
+    # Replaces GeoLite2-City as the primary location database
+    dbip_city_db_path: str = "data/dbip-city.mmdb"
 
-    # Paid GeoIP2 databases (higher city-level accuracy and coverage)
-    # Used when available; falls back to GeoLite2 otherwise.
-    geoip2_city_db_path: str = ""
-    geoip2_asn_db_path: str = ""
+    # GeoLite2 ASN (kept for ISP/ASN data since DB-IP Lite has no ASN)
+    geo_asn_db_path: str = "data/GeoLite2-ASN.mmdb"
+
+    # ip2region xdb for China ISP enhancement (Apache 2.0, free)
+    ip2region_xdb_path: str = "data/ip2region_v4.xdb"
 
     admin_token: str = "change-me"
 

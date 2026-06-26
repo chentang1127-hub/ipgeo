@@ -30,6 +30,7 @@ services:
       IPGEO_RAPIDAPI_PROXY_SECRET: "${IPGEO_RAPIDAPI_PROXY_SECRET:-}"
     volumes:
       - ./data:/app/data
+      - ./ip2region:/app/ip2region
     depends_on:
       redis:
         condition: service_healthy
