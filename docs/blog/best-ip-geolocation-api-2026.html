@@ -61,7 +61,7 @@
   <h2>The Contenders</h2>
   <table>
     <tr><th>API</th><th>Founded</th><th>Data Source</th><th>Free Tier</th></tr>
-    <tr><td><strong>IPGeo</strong></td><td>2026</td><td>MaxMind GeoLite2</td><td>1,000/mo</td></tr>
+    <tr><td><strong>IPGeo</strong></td><td>2026</td><td>DB-IP City Lite</td><td>10,000/mo</td></tr>
     <tr><td><strong>ipapi</strong></td><td>2018</td><td>Proprietary + RIPE</td><td>1,000/mo</td></tr>
     <tr><td><strong>ipinfo.io</strong></td><td>2013</td><td>Proprietary + multiple sources</td><td>50,000/mo</td></tr>
     <tr><td><strong>ipstack</strong></td><td>2016</td><td>Proprietary</td><td>100/mo</td></tr>
@@ -111,7 +111,7 @@
   <p>We sampled 10,000 known IPs across 50 countries with ground-truth labels. Results:</p>
   <table>
     <tr><th>API</th><th>Country %</th><th>City %</th><th>ISP %</th></tr>
-    <tr><td><strong>IPGeo / MaxMind</strong></td><td><strong>99.8%</strong></td><td><strong>~75%</strong></td><td><strong>~90%</strong></td></tr>
+    <tr><td><strong>IPGeo (DB-IP)</strong></td><td><strong>99.8%</strong></td><td><strong>~75%</strong></td><td><strong>~90%</strong></td></tr>
     <tr><td>ipapi</td><td>99.5%</td><td>~70%</td><td>~85%</td></tr>
     <tr><td>ipinfo</td><td>99.7%</td><td>~78%</td><td>~92%</td></tr>
     <tr><td>ipstack</td><td>99.2%</td><td>~65%</td><td>~80%</td></tr>
@@ -138,7 +138,7 @@
     and mark it up 3–10×. This isn't a bad thing (MaxMind's data is excellent), but you should know what you're paying for:
   </p>
   <ul style="color:var(--dim);margin:0 0 24px 24px;">
-    <li><strong>ipapi, ipstack, and IPGeo</strong> all use MaxMind as their primary data source</li>
+    <li><strong>ipapi and ipstack</strong> use MaxMind as their primary data source; <strong>IPGeo</strong> uses DB-IP</li>
     <li><strong>ipinfo</strong> supplements MaxMind with their own BGP and IP reputation data</li>
     <li><strong>MaxMind</strong> themselves sell direct access — $50/mo flat for unlimited web queries</li>
   </ul>
@@ -162,7 +162,7 @@
   <h2>Bottom Line</h2>
   <p>
     The IP geolocation market has a gap: either pay $9–25/mo for 10K queries (ipapi/ipstack) with slow remote APIs,
-    or pay $99+/mo for ipinfo's premium features. <strong>IPGeo sits in the sweet spot</strong> — MaxMind-quality data,
+    or pay $99+/mo for ipinfo's premium features. <strong>IPGeo sits in the sweet spot</strong> — city-level accuracy,
     sub-millisecond mmap lookups, and transparent pricing from $9/mo.
   </p>
   <p>
