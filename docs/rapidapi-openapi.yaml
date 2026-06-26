@@ -8,7 +8,7 @@ info:
 
     - **Security flags included** — VPN, proxy, Tor, hosting detection on every plan
     - **10,000 free lookups/month** — enough for a full project PoC
-    - **DB-IP powered** — city-level IP geolocation data, updated monthly
+    - **Industry-standard IP data** — city-level IP geolocation, updated regularly
     - **<1ms response** — mmap-backed local database, not a proxied upstream API
 
     | Plan | Price | Lookups/mo | Rate/min |
@@ -379,7 +379,7 @@ paths:
                 status: "healthy"
                 version: "0.2.0"
                 components:
-                  database: { status: "operational", detail: "DB-IP City Lite" }
+                  database: { status: "operational", detail: "IP Geolocation Database" }
                   redis: { status: "operational", detail: "Connected" }
                   api: { status: "operational", detail: "v0.2.0" }
 

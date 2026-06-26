@@ -318,7 +318,7 @@ async def health():
     components["database"] = {
         "status": "operational" if db_loaded else "degraded",
         "detail": (
-            "DB-IP City Lite"
+            "City-Level IP Database"
             if db_loaded
             else "Database not loaded"
         ),

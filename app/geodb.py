@@ -251,7 +251,7 @@ class GeoReader:
                 "is_tor": False, "is_vpn": False,
                 "is_proxy": False, "is_hosting": False,
             },
-            "meta": {"data_source": "DB-IP"},
+            "meta": {"data_source": "City-Level IP Database"},
         }
         return result
 
@@ -322,7 +322,7 @@ class GeoReader:
     @staticmethod
     def _build_meta(plan: str) -> dict:
         """Build meta block with data source."""
-        meta = {"data_source": "DB-IP"}
+        meta = {"data_source": "City-Level IP Database"}
         if plan in ("free", "starter"):
             meta["upgrade"] = {
                 "risk_scoring": "Get risk_score, confidence, and abuse reports on Pro+",
